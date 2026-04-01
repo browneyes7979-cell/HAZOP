@@ -33,7 +33,6 @@
     .ibox.show { display:block; }
     .ierr { background:#fef2f2; border:1px solid #fecaca; color:#b91c1c; }
     .iok  { background:#f0fdf4; border:1px solid #86efac; color:#15803d; }
-    .iwarn{ background:#fef9c3; border:1px solid #fde047; color:#854d0e; }
   </style>
 </head>
 <body class="p-4 md:p-8">
@@ -98,39 +97,16 @@
 
 </div>
 <script>
-// ★ 법제처 API 키 (OC값) — browndogs79
-const LAW_KEY  = "browndogs79";
+// ★ data.go.kr 법제처 API 키 (도메인 등록 불필요)
+const LAW_KEY  = "6af6cff996b56f313086d87baa2e913c1da26318f3bb36bd48f8a3ff560f3ed6";
 const GROQ_KEY = "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";
+
+// data.go.kr 법제처 API 엔드포인트
+const LAW_API = "https://apis.data.go.kr/1170000/law/lawSearchList.do";
 
 let curLawName = "", lastResult = null;
 
-// ── JSONP 유틸 ─────────────────────────────────────────
-function jsonp(url, cbName, ms) {
-  return new Promise(function(resolve, reject) {
-    var old = document.getElementById("__s" + cbName);
-    if (old) old.remove();
-    var timer = setTimeout(function() {
-      delete window[cbName];
-      reject(new Error("응답 없음 (" + (ms/1000) + "초)"));
-    }, ms);
-    window[cbName] = function(data) {
-      clearTimeout(timer);
-      delete window[cbName];
-      resolve(data);
-    };
-    var s = document.createElement("script");
-    s.id  = "__s" + cbName;
-    s.src = url;
-    s.onerror = function() {
-      clearTimeout(timer);
-      delete window[cbName];
-      reject(new Error("스크립트 로드 실패 — 도메인 등록 후 1~2시간 대기 필요"));
-    };
-    document.body.appendChild(s);
-  });
-}
-
-// ── 법령 선택 → 법제처 eflaw API로 시행일 조회 ─────────
+// ── 법령 선택 → 시행일 조회 ───────────────────────────
 async function onLawChange() {
   var law = document.getElementById("lawSelect").value;
   var sel = document.getElementById("dateSelect");
@@ -149,58 +125,49 @@ async function onLawChange() {
   sel.innerHTML = "<option>조회 중...</option>";
   setDot("ing", "법제처 조회 중...");
 
-  // eflaw = 시행예정법령 (시행일 기준 법령 목록)
-  var url = "https://www.law.go.kr/DRF/lawSearch.do" +
-    "?OC=" + LAW_KEY +
-    "&target=eflaw" +
-    "&type=JSON" +
-    "&query=" + encodeURIComponent(law) +
-    "&display=30" +
-    "&callback=__cb_law";
-
   try {
-    var data = await jsonp(url, "__cb_law", 15000);
+    var url = LAW_API +
+      "?serviceKey=" + LAW_KEY +
+      "&numOfRows=30" +
+      "&pageNo=1" +
+      "&resultType=json" +
+      "&법령명=" + encodeURIComponent(law);
+
+    var res  = await fetch(url);
+    var data = await res.json();
 
     // 응답 구조 파싱
-    var laws = null;
-    if (data.LawSearch) laws = data.LawSearch.law;
-    else if (data.eflaw) laws = data.eflaw.law;
+    var items = null;
+    if (data.response && data.response.body && data.response.body.items) {
+      items = data.response.body.items.item;
+    } else if (data.items) {
+      items = data.items.item;
+    }
 
-    if (!laws) {
-      setDot("ok", "연결됨");
-      showErr("시행일 데이터 없음. 응답: " + JSON.stringify(data).slice(0, 200));
-      sel.innerHTML = "<option value=''>시행일 없음</option>";
+    if (!items) {
+      setDot("err", "데이터 없음");
+      showErr("응답 구조 확인 필요: " + JSON.stringify(data).slice(0, 300));
+      sel.innerHTML = "<option value=''>데이터 없음</option>";
       return;
     }
 
-    if (!Array.isArray(laws)) laws = [laws];
+    if (!Array.isArray(items)) items = [items];
 
-    // 이름 일치 필터 + 시행일 추출
+    // 시행일자 추출 + 중복 제거
     var dates = [], seen = {};
-    laws.forEach(function(l) {
-      var nm = (l.법령명한글 || "").replace(/\s/g, "");
-      var qr = law.replace(/\s/g, "");
-      if (nm === qr && l.시행일자 && !seen[l.시행일자]) {
-        seen[l.시행일자] = true;
-        dates.push(l.시행일자);
+    items.forEach(function(item) {
+      var d = item.시행일자 || item.efYd || item.공포일자;
+      if (d && !seen[d]) {
+        seen[d] = true;
+        dates.push(d);
       }
     });
-
-    // 정확 일치 없으면 전체 사용
-    if (!dates.length) {
-      laws.forEach(function(l) {
-        if (l.시행일자 && !seen[l.시행일자]) {
-          seen[l.시행일자] = true;
-          dates.push(l.시행일자);
-        }
-      });
-    }
 
     dates.sort().reverse();
 
     if (!dates.length) {
       setDot("ok", "연결됨");
-      showErr("시행일 데이터를 찾지 못했습니다.");
+      showErr("시행일자 필드 없음. 원본: " + JSON.stringify(items[0]).slice(0, 200));
       sel.innerHTML = "<option value=''>시행일 없음</option>";
       return;
     }
@@ -208,15 +175,16 @@ async function onLawChange() {
     setDot("ok", "법제처 연결됨 ✓ (" + dates.length + "건)");
     sel.innerHTML = "<option value=''>시행일을 선택하세요</option>" +
       dates.map(function(d) {
-        var f = d.slice(0,4) + "년 " + d.slice(4,6) + "월 " + d.slice(6,8) + "일";
-        return '<option value="' + d + '">' + f + ' 시행분</option>';
+        var clean = d.replace(/-/g, "");
+        var f = clean.slice(0,4) + "년 " + clean.slice(4,6) + "월 " + clean.slice(6,8) + "일";
+        return '<option value="' + clean + '">' + f + ' 시행분</option>';
       }).join("");
     sel.disabled = false;
 
   } catch(e) {
     setDot("err", "조회 실패");
     sel.innerHTML = "<option value=''>조회 실패</option>";
-    showErr(e.message);
+    showErr("오류: " + e.message);
   }
 }
 
@@ -235,12 +203,10 @@ async function runAnalysis() {
 
   var prompt =
     "당신은 여수 석유화학단지 환경 기술 전문가입니다.\n\n" +
-    "[분석 대상]\n" +
-    "- 법령: " + curLawName + "\n" +
-    "- 시행일: " + dateFmt + "\n\n" +
+    "[분석 대상]\n법령: " + curLawName + "\n시행일: " + dateFmt + "\n\n" +
     "[작성 항목]\n" +
     "1. 핵심 개정 내용 (3~5개)\n" +
-    "2. RTO, Flare Stack, LDAR, Scrubber, 저장탱크, 폐수처리 등 석유화학 설비별 영향 및 기술적 조치사항\n" +
+    "2. RTO, Flare Stack, LDAR, Scrubber, 저장탱크, 폐수처리 등 설비별 영향 및 조치사항\n" +
     "3. 인허가 행정 대응 가이드 (신고·허가 변경, 제출 서류, 기한)\n" +
     "4. 위반 시 주요 제재 내용\n" +
     "5. 선제적 준비 체크리스트 (5개 이상)\n\n" +
@@ -260,7 +226,7 @@ async function runAnalysis() {
 
     if (!res.ok) {
       var e = await res.json().catch(function(){return{};});
-      throw new Error(e.error && e.error.message ? e.error.message : "오류 " + res.status);
+      throw new Error(e.error ? e.error.message : "오류 " + res.status);
     }
 
     var json    = await res.json();
@@ -281,8 +247,8 @@ async function runAnalysis() {
       "<span>" + new Date().toLocaleString("ko-KR",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}) + "</span>";
 
     document.getElementById("resultWrap").style.display = "block";
-    setTimeout(function() {
-      document.getElementById("resultWrap").scrollIntoView({behavior:"smooth", block:"start"});
+    setTimeout(function(){
+      document.getElementById("resultWrap").scrollIntoView({behavior:"smooth",block:"start"});
     }, 100);
 
   } catch(e) {
@@ -305,8 +271,8 @@ function showErr(h) {
 function copyResult() {
   if (!lastResult) return;
   navigator.clipboard.writeText(lastResult.content)
-    .then(function() { alert("복사되었습니다."); })
-    .catch(function() { alert("텍스트를 직접 선택해 복사하세요."); });
+    .then(function(){ alert("복사되었습니다."); })
+    .catch(function(){ alert("텍스트를 직접 선택해 복사하세요."); });
 }
 </script>
 </body>
