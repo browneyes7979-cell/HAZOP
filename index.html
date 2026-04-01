@@ -221,7 +221,7 @@ select:disabled{opacity:.4;cursor:not-allowed;background:#f8fafc}
 </div><!-- /wrap -->
 
 <script>
-const GAS = "https://script.google.com/macros/s/AKfycbw_JmdUEuLu2nuffFM29XgoimOwE3z8Le0LuiSRCXmfL9mvZa8J_OFubVphY2h_WYUfWA/exec";
+const GAS = "https://script.google.com/macros/s/AKfycbzDs7NeiG_JMj9CFojzAy3E56-hwuDAuwFOU5WCEGoXcY81J-vLGuYvDtjs-lkLEKG8Uw/exec";
 let lawId="", lawName="", allDates=[], lastText="";
 
 /* ── JSONP ────────────────────────────────────── */
@@ -248,7 +248,7 @@ async function onLaw(){
   var p=v.split("|"); lawName=p[0]; lawId=p[1];
   sel.disabled=true;sel.innerHTML="<option>조회 중...</option>";setDot("ing","법제처 연결 중...");
   try{
-    var d=await jsonp({action:"dates",id:lawId,callback:"__cb_d"},"__cb_d",15000);
+    var d=await jsonp({action:"dates",id:lawId,lawName:lawName,callback:"__cb_d"},"__cb_d",15000);
     if(d.error){setDot("err","오류");sel.innerHTML="<option>오류</option>";showErr("API 오류: "+d.error);return;}
     if(!d.dates||!d.dates.length){
       setDot("ok","연결됨");sel.innerHTML="<option value=''>시행일 없음</option>";
