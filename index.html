@@ -33,6 +33,9 @@
     .ibox.show { display:block; }
     .ierr { background:#fef2f2; border:1px solid #fecaca; color:#b91c1c; }
     .iok  { background:#f0fdf4; border:1px solid #86efac; color:#15803d; }
+    .iwarn{ background:#fef9c3; border:1px solid #fde047; color:#854d0e; }
+    .step-box { background:#f0fdf4; border:1px solid #bbf7d0; border-radius:14px; padding:12px 18px; font-size:13px; font-weight:700; color:#15803d; margin-bottom:16px; display:none; }
+    .step-box.show { display:block; }
   </style>
 </head>
 <body class="p-4 md:p-8">
@@ -40,7 +43,7 @@
 
   <header class="mb-8 text-center">
     <h1 class="text-3xl font-black text-slate-900 tracking-tight mb-2 uppercase" style="font-style:italic">Petro-Law AI Advisor</h1>
-    <p class="text-sm text-slate-500 font-medium">법제처 실시간 연동 · Groq AI · 여수 석유화학단지 특화</p>
+    <p class="text-sm text-slate-500 font-medium">법제처 원문 기반 분석 · Groq AI · 여수 석유화학단지 특화</p>
   </header>
 
   <!-- STEP 1 -->
@@ -49,16 +52,16 @@
     <div class="sel-wrap">
       <select class="dropdown" id="lawSelect" onchange="onLawChange()">
         <option value="">법령을 선택하세요</option>
-        <option value="대기환경보전법">대기환경보전법</option>
-        <option value="물환경보전법">물환경보전법</option>
-        <option value="화학물질관리법">화학물질관리법</option>
-        <option value="화학물질 등록 및 평가법">화학물질 등록 및 평가법</option>
-        <option value="산업안전보건법">산업안전보건법</option>
-        <option value="위험물안전관리법">위험물안전관리법</option>
-        <option value="소음·진동관리법">소음·진동관리법</option>
-        <option value="악취방지법">악취방지법</option>
-        <option value="토양환경보전법">토양환경보전법</option>
-        <option value="환경영향평가법">환경영향평가법</option>
+        <option value="대기환경보전법|001160">대기환경보전법</option>
+        <option value="물환경보전법|001153">물환경보전법</option>
+        <option value="화학물질관리법|001211">화학물질관리법</option>
+        <option value="화학물질 등록 및 평가법|001210">화학물질 등록 및 평가법</option>
+        <option value="산업안전보건법|001138">산업안전보건법</option>
+        <option value="위험물안전관리법|001115">위험물안전관리법</option>
+        <option value="소음·진동관리법|001177">소음·진동관리법</option>
+        <option value="악취방지법|001173">악취방지법</option>
+        <option value="토양환경보전법|001213">토양환경보전법</option>
+        <option value="환경영향평가법|001071">환경영향평가법</option>
       </select>
     </div>
   </div>
@@ -77,6 +80,7 @@
 
   <!-- 실행 -->
   <button class="run-btn" id="runBtn" onclick="runAnalysis()">AI 분석 실행</button>
+  <div class="step-box" id="stepBox"></div>
 
   <!-- 결과 -->
   <div class="result-wrap" id="resultWrap" style="display:none">
@@ -97,158 +101,142 @@
 
 </div>
 <script>
-// ★ data.go.kr 법제처 API 키 (도메인 등록 불필요)
-const LAW_KEY  = "6af6cff996b56f313086d87baa2e913c1da26318f3bb36bd48f8a3ff560f3ed6";
-const GROQ_KEY = "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";
+const GAS = "https://script.google.com/macros/s/AKfycbwQxyFt7DmrKhwLkPP69Adr4ZCSAQ4vKqpMD7SpNchP6T-PgfRcpmQxsFOtKqnnNk5_Nw/exec";
 
-// data.go.kr 법제처 API 엔드포인트
-const LAW_API = "https://apis.data.go.kr/1170000/law/lawSearchList.do";
+let curLawId = "", curLawName = "", lastResult = null;
 
-let curLawName = "", lastResult = null;
+// ── JSONP ──────────────────────────────────────────────
+function jsonp(params, cbName, ms) {
+  return new Promise(function(resolve, reject) {
+    var old = document.getElementById("__s" + cbName);
+    if (old) old.remove();
+    var timer = setTimeout(function() {
+      delete window[cbName];
+      reject(new Error("응답 없음 (" + ms/1000 + "초)"));
+    }, ms);
+    window[cbName] = function(data) {
+      clearTimeout(timer);
+      delete window[cbName];
+      resolve(data);
+    };
+    var s = document.createElement("script");
+    s.id  = "__s" + cbName;
+    s.src = GAS + "?" + new URLSearchParams(params).toString();
+    s.onerror = function() {
+      clearTimeout(timer);
+      delete window[cbName];
+      reject(new Error("GAS 연결 실패"));
+    };
+    document.body.appendChild(s);
+  });
+}
 
 // ── 법령 선택 → 시행일 조회 ───────────────────────────
 async function onLawChange() {
-  var law = document.getElementById("lawSelect").value;
+  var val = document.getElementById("lawSelect").value;
   var sel = document.getElementById("dateSelect");
   var err = document.getElementById("errBox");
   err.classList.remove("show");
 
-  if (!law) {
+  if (!val) {
     sel.innerHTML = "<option value=''>법령을 먼저 선택하세요</option>";
-    sel.disabled  = true;
+    sel.disabled = true;
     setDot("", "법령 선택 후 자동 조회");
     return;
   }
 
-  curLawName = law;
-  sel.disabled  = true;
+  var parts = val.split("|");
+  curLawName = parts[0];
+  curLawId   = parts[1];
+
+  sel.disabled = true;
   sel.innerHTML = "<option>조회 중...</option>";
   setDot("ing", "법제처 조회 중...");
 
   try {
-    var url = LAW_API +
-      "?serviceKey=" + LAW_KEY +
-      "&numOfRows=30" +
-      "&pageNo=1" +
-      "&resultType=json" +
-      "&법령명=" + encodeURIComponent(law);
+    var data = await jsonp(
+      { action:"dates", id:curLawId, callback:"__cb_d" },
+      "__cb_d", 15000
+    );
 
-    var res  = await fetch(url);
-    var data = await res.json();
-
-    // 응답 구조 파싱
-    var items = null;
-    if (data.response && data.response.body && data.response.body.items) {
-      items = data.response.body.items.item;
-    } else if (data.items) {
-      items = data.items.item;
-    }
-
-    if (!items) {
-      setDot("err", "데이터 없음");
-      showErr("응답 구조 확인 필요: " + JSON.stringify(data).slice(0, 300));
-      sel.innerHTML = "<option value=''>데이터 없음</option>";
+    if (data.error) {
+      setDot("err", "오류");
+      sel.innerHTML = "<option>오류</option>";
+      showErr("오류: " + data.error);
       return;
     }
 
-    if (!Array.isArray(items)) items = [items];
-
-    // 시행일자 추출 + 중복 제거
-    var dates = [], seen = {};
-    items.forEach(function(item) {
-      var d = item.시행일자 || item.efYd || item.공포일자;
-      if (d && !seen[d]) {
-        seen[d] = true;
-        dates.push(d);
-      }
-    });
-
-    dates.sort().reverse();
-
-    if (!dates.length) {
+    if (!data.dates || !data.dates.length) {
       setDot("ok", "연결됨");
-      showErr("시행일자 필드 없음. 원본: " + JSON.stringify(items[0]).slice(0, 200));
       sel.innerHTML = "<option value=''>시행일 없음</option>";
+      if (data.debug) showErr("시행일 없음. 응답: " + data.debug);
       return;
     }
 
-    setDot("ok", "법제처 연결됨 ✓ (" + dates.length + "건)");
+    setDot("ok", "연결됨 ✓ (" + data.dates.length + "건)");
     sel.innerHTML = "<option value=''>시행일을 선택하세요</option>" +
-      dates.map(function(d) {
-        var clean = d.replace(/-/g, "");
-        var f = clean.slice(0,4) + "년 " + clean.slice(4,6) + "월 " + clean.slice(6,8) + "일";
-        return '<option value="' + clean + '">' + f + ' 시행분</option>';
+      data.dates.map(function(d) {
+        var f = d.slice(0,4) + "년 " + d.slice(4,6) + "월 " + d.slice(6,8) + "일";
+        return '<option value="' + d + '">' + f + ' 시행분</option>';
       }).join("");
     sel.disabled = false;
 
   } catch(e) {
-    setDot("err", "조회 실패");
-    sel.innerHTML = "<option value=''>조회 실패</option>";
+    setDot("err", "연결 실패");
+    sel.innerHTML = "<option>연결 실패</option>";
     showErr("오류: " + e.message);
   }
 }
 
-// ── AI 분석 ────────────────────────────────────────────
+// ── AI 분석 실행 ───────────────────────────────────────
 async function runAnalysis() {
-  if (!curLawName) { alert("법령을 선택해주세요."); return; }
+  if (!curLawId) { alert("법령을 선택해주세요."); return; }
   var date = document.getElementById("dateSelect").value;
   if (!date) { alert("시행일을 선택해주세요."); return; }
 
-  var btn = document.getElementById("runBtn");
+  var btn  = document.getElementById("runBtn");
+  var step = document.getElementById("stepBox");
   btn.disabled = true;
   btn.innerHTML = '<div class="spin"></div>&ensp;분석 중...';
   document.getElementById("resultWrap").style.display = "none";
-
-  var dateFmt = date.slice(0,4) + "-" + date.slice(4,6) + "-" + date.slice(6,8);
-
-  var prompt =
-    "당신은 여수 석유화학단지 환경 기술 전문가입니다.\n\n" +
-    "[분석 대상]\n법령: " + curLawName + "\n시행일: " + dateFmt + "\n\n" +
-    "[작성 항목]\n" +
-    "1. 핵심 개정 내용 (3~5개)\n" +
-    "2. RTO, Flare Stack, LDAR, Scrubber, 저장탱크, 폐수처리 등 설비별 영향 및 조치사항\n" +
-    "3. 인허가 행정 대응 가이드 (신고·허가 변경, 제출 서류, 기한)\n" +
-    "4. 위반 시 주요 제재 내용\n" +
-    "5. 선제적 준비 체크리스트 (5개 이상)\n\n" +
-    "현장 실무자가 바로 활용할 수 있도록 구체적으로 작성해주세요.";
+  step.classList.add("show");
+  step.textContent = "법제처에서 " + curLawName + " 원문 가져오는 중...";
 
   try {
-    var res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: { "Authorization": "Bearer " + GROQ_KEY, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
-        temperature: 0.4,
-        max_tokens: 2048,
-        messages: [{ role: "user", content: prompt }]
-      })
-    });
+    step.textContent = "AI가 원문 분석 중... (최대 60초)";
+    var data = await jsonp(
+      { action:"analyze", id:curLawId, date:date, lawName:curLawName, callback:"__cb_a" },
+      "__cb_a", 60000
+    );
 
-    if (!res.ok) {
-      var e = await res.json().catch(function(){return{};});
-      throw new Error(e.error ? e.error.message : "오류 " + res.status);
-    }
+    if (data.error) throw new Error(data.error);
 
-    var json    = await res.json();
-    var content = json.choices[0].message.content;
-    var tokens  = json.usage ? json.usage.total_tokens : 0;
-
-    lastResult = { lawName: curLawName, date: dateFmt, content: content };
+    var df = date.slice(0,4) + "-" + date.slice(4,6) + "-" + date.slice(6,8);
+    lastResult = { lawName:curLawName, date:df, content:data.content };
 
     document.getElementById("resTitle").textContent = curLawName;
     document.getElementById("resBadges").innerHTML =
-      '<span class="badge bi">' + dateFmt + ' 시행</span>' +
+      '<span class="badge bi">' + df + ' 시행</span>' +
       '<span class="badge bo" style="margin-left:6px">석유화학 현장</span>' +
-      (tokens ? '<span class="badge bg" style="margin-left:6px">토큰 ' + tokens.toLocaleString() + '</span>' : "");
+      (data.tokens ? '<span class="badge bg" style="margin-left:6px">토큰 ' + data.tokens.toLocaleString() + '</span>' : "");
 
-    document.getElementById("resContent").textContent = content;
+    var note = document.getElementById("sourceNote");
+    if (data.hasSource) {
+      note.className = "ibox iok show";
+      note.textContent = "법제처 원문 기반 분석 — 실제 개정 조문을 토대로 작성되었습니다.";
+    } else {
+      note.className = "ibox iwarn show";
+      note.textContent = "원문 미확인 — AI 추정값이 포함될 수 있습니다. 법제처 원문을 직접 확인하세요.";
+    }
+
+    document.getElementById("resContent").textContent = data.content;
     document.getElementById("resFooter").innerHTML =
-      "<span>모델: llama-3.3-70b-versatile</span>" +
+      "<span>모델: " + (data.model || "Groq") + "</span>" +
       "<span>" + new Date().toLocaleString("ko-KR",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}) + "</span>";
 
     document.getElementById("resultWrap").style.display = "block";
-    setTimeout(function(){
-      document.getElementById("resultWrap").scrollIntoView({behavior:"smooth",block:"start"});
+    setTimeout(function() {
+      document.getElementById("resultWrap").scrollIntoView({behavior:"smooth", block:"start"});
     }, 100);
 
   } catch(e) {
@@ -256,6 +244,7 @@ async function runAnalysis() {
   } finally {
     btn.disabled = false;
     btn.innerHTML = "AI 분석 실행";
+    step.classList.remove("show");
   }
 }
 
@@ -271,8 +260,8 @@ function showErr(h) {
 function copyResult() {
   if (!lastResult) return;
   navigator.clipboard.writeText(lastResult.content)
-    .then(function(){ alert("복사되었습니다."); })
-    .catch(function(){ alert("텍스트를 직접 선택해 복사하세요."); });
+    .then(function() { alert("복사되었습니다."); })
+    .catch(function() { alert("텍스트를 직접 선택해 복사하세요."); });
 }
 </script>
 </body>
