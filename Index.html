@@ -1,1078 +1,237 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>여수 국가산단 사고 예측</title>
-<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
-<style>
-/*
-  데이터 흐름:
-  GitHub Actions(서버) → 기상청/에어코리아 API 호출
-                       → data/*.json 저장 (30분마다)
-                       → GitHub Pages로 제공
-  이 HTML → ./data/*.json 읽기 (같은 출처 → CORS 없음)
-           → 실패 시 Open-Meteo 직접 호출 (CORS 지원)
-*/
-:root{
-  --bg:#05080f; --sur:#0a1020; --sur2:#0e1830; --bdr:#1a2a48;
-  --ac:#00cfff;
-  --lv-safe:#00e676;    --lv-safe-bg:rgba(0,230,118,.08);
-  --lv-caution:#38bdf8; --lv-caution-bg:rgba(56,189,248,.08);
-  --lv-watch:#ffaa00;   --lv-watch-bg:rgba(255,170,0,.10);
-  --lv-alert:#ff3535;   --lv-alert-bg:rgba(255,53,53,.12);
-  --tx:#bdd0ee; --txd:#4a6080; --txb:#e4eeff;
-  --mono:'Share Tech Mono',monospace;
-  --sans:'Noto Sans KR',sans-serif;
-}
-*{margin:0;padding:0;box-sizing:border-box;}
-body{background:var(--bg);color:var(--tx);font-family:var(--sans);min-height:100vh;overflow-x:hidden;}
-body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.04) 3px,rgba(0,0,0,.04) 4px);pointer-events:none;z-index:9999;}
-
-/* ── HEADER ── */
-header{background:linear-gradient(90deg,#030710,#081020,#030710);border-bottom:1px solid var(--bdr);height:52px;padding:0 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:300;}
-.hlogo{display:flex;align-items:center;gap:10px;}
-.hicon{width:28px;height:28px;border:1.5px solid var(--ac);display:grid;grid-template-columns:1fr 1fr;gap:2px;padding:4px;box-shadow:0 0 10px rgba(0,207,255,.2);}
-.hicon b{background:var(--ac);display:block;animation:bc 3s infinite;}
-.hicon b:nth-child(2){animation-delay:.5s;} .hicon b:nth-child(3){animation-delay:1s;} .hicon b:nth-child(4){animation-delay:1.5s;}
-@keyframes bc{0%,75%,100%{opacity:1;}87%{opacity:.15;}}
-.htitle{font-family:var(--mono);font-size:12px;letter-spacing:2px;color:var(--txb);}
-.htitle em{color:var(--ac);font-style:normal;}
-.hmeta{display:flex;align-items:center;gap:12px;font-family:var(--mono);font-size:10px;}
-.live{display:flex;align-items:center;gap:5px;color:var(--lv-safe);}
-.ldot{width:6px;height:6px;border-radius:50%;background:var(--lv-safe);box-shadow:0 0 6px var(--lv-safe);animation:pd 1.4s infinite;}
-@keyframes pd{0%,100%{transform:scale(1);}50%{transform:scale(1.6);opacity:.5;}}
-#clock{color:var(--ac);}
-
-/* ── DATA SOURCE 표시줄 ── */
-.datasrc-bar{background:var(--sur2);border-bottom:1px solid var(--bdr);padding:4px 16px;font-family:var(--mono);font-size:9px;color:var(--txd);display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
-.ds-item{display:flex;align-items:center;gap:4px;}
-.ds-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
-.ds-dot.ok{background:var(--lv-safe);} .ds-dot.fallback{background:var(--lv-watch);} .ds-dot.fail{background:var(--lv-alert);} .ds-dot.load{background:var(--ac);animation:pd .6s infinite;}
-
-/* ── TICKER ── */
-.ticker{background:var(--sur);border-bottom:1px solid var(--bdr);height:24px;display:flex;align-items:center;overflow:hidden;}
-.tlbl{background:var(--ac);color:#000;font-family:var(--mono);font-size:9px;font-weight:900;letter-spacing:2px;padding:0 8px;height:100%;display:flex;align-items:center;flex-shrink:0;}
-.ttrack{flex:1;overflow:hidden;}
-.tinner{display:flex;gap:36px;animation:scroll 70s linear infinite;white-space:nowrap;font-family:var(--mono);font-size:10px;color:var(--txd);}
-.tinner .v{color:var(--txb);}.tinner .r{color:var(--lv-alert);}.tinner .w{color:var(--lv-watch);}.tinner .g{color:var(--lv-safe);}.tinner .c{color:var(--lv-caution);}
-@keyframes scroll{0%{transform:translateX(0);}100%{transform:translateX(-50%);}}
-
-/* ── SPINNER ── */
-.spin{display:inline-block;width:11px;height:11px;border:2px solid var(--bdr);border-top-color:var(--ac);border-radius:50%;animation:sp .8s linear infinite;vertical-align:middle;}
-@keyframes sp{to{transform:rotate(360deg);}}
-
-/* ── LAYOUT ── */
-.wrap{display:grid;grid-template-columns:260px 1fr;gap:10px;padding:10px 14px;max-width:1440px;margin:0 auto;}
-
-/* ── CARD ── */
-.card{background:var(--sur);border:1px solid var(--bdr);padding:12px;position:relative;overflow:hidden;}
-.card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--ac),transparent);opacity:.2;}
-.ct{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--txd);text-transform:uppercase;margin-bottom:9px;display:flex;align-items:center;justify-content:space-between;}
-.ct-l{display:flex;align-items:center;gap:6px;}
-.ct-l::before{content:'';width:2px;height:10px;background:var(--ac);display:block;}
-.btn{background:rgba(0,207,255,.08);border:1px solid rgba(0,207,255,.22);color:var(--ac);font-family:var(--mono);font-size:9px;padding:2px 7px;cursor:pointer;transition:.2s;}
-.btn:hover{background:rgba(0,207,255,.18);}
-
-/* ══ 메인 위험 단계 배지 ══ */
-.risk-main{text-align:center;padding:14px 12px 10px;}
-.risk-badge{
-  display:inline-flex;align-items:center;gap:10px;
-  font-family:var(--mono);font-size:22px;font-weight:700;letter-spacing:3px;
-  padding:10px 20px;border:2px solid;margin-bottom:8px;
-  transition:all .6s;
-}
-.risk-badge.safe   {color:var(--lv-safe);   border-color:var(--lv-safe);   box-shadow:0 0 20px rgba(0,230,118,.2);}
-.risk-badge.caution{color:var(--lv-caution);border-color:var(--lv-caution);box-shadow:0 0 20px rgba(56,189,248,.2);}
-.risk-badge.watch  {color:var(--lv-watch);  border-color:var(--lv-watch);  box-shadow:0 0 20px rgba(255,170,0,.25);}
-.risk-badge.alert  {color:var(--lv-alert);  border-color:var(--lv-alert);  box-shadow:0 0 20px rgba(255,53,53,.3);animation:alertpulse 2s infinite;}
-@keyframes alertpulse{0%,100%{box-shadow:0 0 20px rgba(255,53,53,.3);}50%{box-shadow:0 0 35px rgba(255,53,53,.6);}}
-.risk-name{font-size:11px;color:var(--txd);font-family:var(--mono);letter-spacing:1px;margin-bottom:4px;}
-.risk-sub{font-size:11px;color:var(--txd);line-height:1.6;min-height:30px;}
-.score-link{font-size:10px;color:var(--ac);margin-top:6px;cursor:pointer;text-decoration:underline dotted;display:inline-block;}
-.score-link:hover{opacity:.7;}
-
-/* ── 유형별 위험 바 ── */
-.rbars{display:flex;flex-direction:column;gap:9px;}
-.rrow{display:flex;flex-direction:column;gap:3px;}
-.rrh{display:flex;justify-content:space-between;align-items:center;font-size:11px;}
-.rrt{height:4px;background:rgba(255,255,255,.05);border-radius:2px;overflow:hidden;}
-.rrf{height:100%;border-radius:2px;transition:width 1.2s ease;}
-.rrf.c{background:linear-gradient(90deg,#ff6b35,#ff3535);}
-.rrf.f{background:linear-gradient(90deg,#ffaa00,#ff6600);}
-.rrf.e{background:linear-gradient(90deg,#00cfff,#0055ff);}
-.rlvl{font-family:var(--mono);font-size:9px;padding:1px 5px;border-radius:1px;}
-.rlvl.safe   {background:var(--lv-safe-bg);   color:var(--lv-safe);}
-.rlvl.caution{background:var(--lv-caution-bg);color:var(--lv-caution);}
-.rlvl.watch  {background:var(--lv-watch-bg);  color:var(--lv-watch);}
-.rlvl.alert  {background:var(--lv-alert-bg);  color:var(--lv-alert);}
-
-/* ── 기상 그리드 ── */
-.wgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
-.wi{background:var(--sur2);border:1px solid var(--bdr);padding:7px 9px;}
-.wl{font-size:9px;color:var(--txd);margin-bottom:1px;}
-.wv{font-family:var(--mono);font-size:14px;color:var(--txb);line-height:1.2;}
-.wv.w{color:var(--lv-watch);}.wv.r{color:var(--lv-alert);}
-.wu{font-size:9px;color:var(--txd);}
-.wsub{font-size:9px;color:var(--txd);margin-top:1px;font-family:var(--mono);}
-
-/* ══ 단기 시간별 예보 차트 (오늘 8~18시) ══ */
-.fcwrap{overflow-x:auto;padding-bottom:2px;}
-.fcbars{display:flex;gap:5px;align-items:flex-end;min-width:480px;padding:0 2px;}
-.fccol{display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;min-width:36px;}
-.fcbarwrap{flex:1;display:flex;flex-direction:column;justify-content:flex-end;width:100%;height:70px;}
-.fcbar{width:100%;border-radius:2px 2px 0 0;min-height:4px;transition:height .8s ease;}
-.fcbar.safe   {background:linear-gradient(180deg,var(--lv-safe),rgba(0,230,118,.2));}
-.fcbar.caution{background:linear-gradient(180deg,var(--lv-caution),rgba(56,189,248,.2));}
-.fcbar.watch  {background:linear-gradient(180deg,var(--lv-watch),rgba(255,170,0,.2));}
-.fcbar.alert  {background:linear-gradient(180deg,var(--lv-alert),rgba(255,53,53,.2));}
-.fclvl{font-family:var(--mono);font-size:8px;}
-.fclvl.safe   {color:var(--lv-safe);}   .fclvl.caution{color:var(--lv-caution);}
-.fclvl.watch  {color:var(--lv-watch);}  .fclvl.alert  {color:var(--lv-alert);}
-.fctemp{font-family:var(--mono);font-size:8px;color:var(--txd);}
-.fchour{font-family:var(--mono);font-size:9px;color:var(--txd);}
-.fcpeak{font-size:10px;color:var(--txd);margin-top:6px;font-family:var(--mono);}
-
-/* ══ 중기예보 위험 카드 (3~7일) ══ */
-.midgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;}
-.midcard{background:var(--sur2);border:1px solid var(--bdr);border-top:2px solid;padding:9px 6px;text-align:center;}
-.midcard.safe   {border-top-color:var(--lv-safe);}
-.midcard.caution{border-top-color:var(--lv-caution);}
-.midcard.watch  {border-top-color:var(--lv-watch);}
-.midcard.alert  {border-top-color:var(--lv-alert);}
-.mc-day{font-family:var(--mono);font-size:9px;color:var(--txd);margin-bottom:4px;}
-.mc-icon{font-size:18px;margin-bottom:3px;}
-.mc-lvl{font-family:var(--mono);font-size:10px;font-weight:700;margin-bottom:2px;}
-.midcard.safe    .mc-lvl{color:var(--lv-safe);}
-.midcard.caution .mc-lvl{color:var(--lv-caution);}
-.midcard.watch   .mc-lvl{color:var(--lv-watch);}
-.midcard.alert   .mc-lvl{color:var(--lv-alert);}
-.mc-temp{font-family:var(--mono);font-size:9px;color:var(--txd);}
-.mc-rain{font-size:9px;color:var(--txd);}
-
-/* ══ 단계별 가이드 ══ */
-.guide-items{display:flex;flex-direction:column;gap:5px;}
-.gi{display:flex;align-items:flex-start;gap:6px;font-size:11px;line-height:1.5;color:var(--tx);}
-.gi::before{content:'›';color:var(--ac);flex-shrink:0;margin-top:1px;}
-.gtitle{font-family:var(--mono);font-size:9px;letter-spacing:1px;margin-bottom:7px;padding:3px 8px;display:inline-block;}
-.gtitle.safe   {background:var(--lv-safe-bg);   color:var(--lv-safe);}
-.gtitle.caution{background:var(--lv-caution-bg);color:var(--lv-caution);}
-.gtitle.watch  {background:var(--lv-watch-bg);  color:var(--lv-watch);}
-.gtitle.alert  {background:var(--lv-alert-bg);  color:var(--lv-alert);}
-
-/* ══ 조건부 사례 ══ */
-.case-list{display:flex;flex-direction:column;gap:7px;}
-.casec{background:var(--sur2);border:1px solid var(--bdr);border-left:3px solid;padding:10px 12px;cursor:pointer;transition:.15s;display:none;}
-.casec.show{display:block;}
-.casec:hover{background:rgba(255,255,255,.03);}
-.casec.chem{border-left-color:var(--lv-alert);}
-.casec.fall{border-left-color:var(--lv-watch);}
-.casec.env {border-left-color:var(--lv-caution);}
-.casec-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
-.casec-type{font-family:var(--mono);font-size:9px;letter-spacing:1px;color:var(--txd);}
-.casec-lvb{font-family:var(--mono);font-size:9px;padding:1px 5px;}
-.casec-lvb.watch{background:var(--lv-watch-bg);color:var(--lv-watch);border:1px solid rgba(255,170,0,.3);}
-.casec-lvb.alert{background:var(--lv-alert-bg);color:var(--lv-alert);border:1px solid rgba(255,53,53,.3);}
-.casec-title{font-size:12px;font-weight:700;color:var(--txb);margin-bottom:3px;}
-.casec-trig{font-size:10px;color:var(--txd);margin-bottom:4px;}
-.casec-foot{display:flex;justify-content:space-between;font-size:10px;color:var(--txd);padding-top:5px;border-top:1px solid var(--bdr);}
-.no-case{font-size:11px;color:var(--txd);text-align:center;padding:12px;border:1px dashed var(--bdr);}
-
-/* ── MODAL ── */
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,.80);z-index:500;display:none;align-items:center;justify-content:center;padding:16px;}
-.overlay.open{display:flex;}
-.modal{background:var(--sur);border:1px solid var(--bdr);max-width:620px;width:100%;max-height:88vh;overflow-y:auto;position:relative;}
-.modal::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--ac),var(--lv-watch),var(--ac));}
-.mhead{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:1px solid var(--bdr);}
-.mtitle{font-family:var(--mono);font-size:11px;letter-spacing:2px;color:var(--txb);}
-.mclose{background:none;border:1px solid var(--bdr);color:var(--txd);width:24px;height:24px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
-.mclose:hover{border-color:var(--lv-alert);color:var(--lv-alert);}
-.mbody{padding:16px;}
-.msec{margin-bottom:14px;}
-.msec-t{font-family:var(--mono);font-size:9px;letter-spacing:2px;color:var(--ac);border-bottom:1px solid var(--bdr);padding-bottom:4px;margin-bottom:7px;}
-.dtable{width:100%;border-collapse:collapse;font-size:11px;}
-.dtable th{font-family:var(--mono);font-size:9px;color:var(--txd);padding:4px 7px;text-align:left;border-bottom:1px solid var(--bdr);background:var(--sur2);}
-.dtable td{padding:6px 7px;border-bottom:1px solid rgba(26,42,72,.4);font-family:var(--mono);font-size:10px;}
-.tok{color:var(--lv-safe);}.twn{color:var(--lv-watch);}.tdg{color:var(--lv-alert);}
-.formula{background:var(--sur2);border:1px solid var(--bdr);border-left:2px solid var(--ac);padding:10px 12px;font-family:var(--mono);font-size:11px;line-height:2;margin-bottom:7px;}
-.formula .ft{color:var(--txd);font-size:8px;letter-spacing:1px;margin-bottom:2px;}
-.fvar{color:var(--lv-watch);}.fcoef{color:var(--lv-safe);}
-.rcase{background:var(--sur2);border:1px solid var(--bdr);padding:9px 11px;margin-bottom:6px;font-size:11px;line-height:1.8;}
-.rcase-title{font-weight:700;color:var(--txb);margin-bottom:3px;font-size:12px;}
-.rl{display:inline-block;font-family:var(--mono);font-size:8px;padding:2px 5px;margin-right:4px;margin-bottom:4px;}
-.rl-d{background:var(--lv-alert-bg);color:var(--lv-alert);border:1px solid rgba(255,53,53,.3);}
-.rl-w{background:var(--lv-watch-bg);color:var(--lv-watch);border:1px solid rgba(255,170,0,.3);}
-
-.rcol{display:flex;flex-direction:column;gap:10px;}
-@media(max-width:1000px){.wrap{grid-template-columns:1fr;}.midgrid{grid-template-columns:repeat(3,1fr);}.wgrid{grid-template-columns:repeat(4,1fr);}}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PETRO-LAW AI ADVISOR</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    body { font-family:'Noto Sans KR',sans-serif; background-color:#f3f4f6; }
+    .card { background:white; padding:28px; border-radius:36px; box-shadow:0 20px 60px rgba(0,0,0,0.08); margin-bottom:18px; }
+    .s-label { font-size:11px; font-weight:900; letter-spacing:2px; text-transform:uppercase; color:#6366f1; margin-bottom:14px; }
+    .sel-wrap { position:relative; }
+    .sel-wrap::after { content:''; position:absolute; right:20px; top:50%; transform:translateY(-50%); width:0; height:0; border-left:5px solid transparent; border-right:5px solid transparent; border-top:6px solid #94a3b8; pointer-events:none; }
+    .dropdown { width:100%; padding:16px 48px 16px 20px; border:2px solid #e2e8f0; border-radius:16px; background:white; font-family:'Noto Sans KR',sans-serif; font-size:15px; font-weight:700; color:#374151; outline:none; appearance:none; -webkit-appearance:none; cursor:pointer; transition:border-color 0.2s; }
+    .dropdown:focus,.dropdown:hover { border-color:#6366f1; box-shadow:0 0 0 3px rgba(99,102,241,0.12); }
+    .dropdown:disabled { opacity:0.4; cursor:not-allowed; background:#f8fafc; }
+    .run-btn { width:100%; height:66px; border:none; border-radius:26px; background:#111827; color:white; font-family:'Noto Sans KR',sans-serif; font-size:17px; font-weight:900; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; transition:all 0.2s; margin-bottom:16px; }
+    .run-btn:hover:not(:disabled) { background:#4f46e5; box-shadow:0 8px 28px rgba(79,70,229,0.4); transform:translateY(-2px); }
+    .run-btn:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+    .spin { width:20px; height:20px; border:3px solid rgba(255,255,255,0.3); border-top-color:white; border-radius:50%; animation:spin .7s linear infinite; display:inline-block; flex-shrink:0; }
+    @keyframes spin { to{transform:rotate(360deg);} }
+    .result-wrap { background:white; border-radius:30px; border-left:8px solid #6366f1; box-shadow:0 4px 24px rgba(99,102,241,0.08); padding:26px; }
+    .badge { display:inline-block; padding:4px 12px; border-radius:20px; font-size:11px; font-weight:700; }
+    .bi{background:#eef2ff;color:#4338ca;} .bo{background:#fff7ed;color:#c2410c;} .bg{background:#f0fdf4;color:#15803d;}
+    .srow { display:flex; align-items:center; gap:8px; font-size:12px; font-weight:700; margin-bottom:14px; color:#64748b; }
+    .dot { width:8px; height:8px; border-radius:50%; background:#cbd5e1; flex-shrink:0; transition:all 0.3s; }
+    .dot.ok  { background:#4ade80; box-shadow:0 0 6px #4ade80; }
+    .dot.err { background:#f87171; box-shadow:0 0 6px #f87171; }
+    .dot.ing { background:#fbbf24; animation:blink 1s infinite; }
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+    .ibox { border-radius:14px; padding:14px 18px; font-size:13px; line-height:1.8; margin-top:12px; display:none; }
+    .ibox.show { display:block; }
+    .ierr  { background:#fef2f2; border:1px solid #fecaca; color:#b91c1c; }
+    .iwarn { background:#fef9c3; border:1px solid #fde047; color:#854d0e; }
+    .iok   { background:#f0fdf4; border:1px solid #86efac; color:#15803d; }
+    .step-box { background:#f0fdf4; border:1px solid #bbf7d0; border-radius:14px; padding:12px 18px; font-size:13px; font-weight:700; color:#15803d; margin-bottom:16px; display:none; }
+    .step-box.show { display:block; }
+  </style>
 </head>
-<body>
+<body class="p-4 md:p-8">
+<div class="max-w-2xl mx-auto">
 
-<header>
-  <div class="hlogo">
-    <div class="hicon"><b></b><b></b><b></b><b></b></div>
-    <div>
-      <div class="htitle">여수 국가산단 <em>사고 예측</em></div>
-      <div style="font-size:9px;color:var(--txd);font-family:var(--mono);letter-spacing:1px;margin-top:1px;">YEOSU IND. COMPLEX · ACCIDENT PREDICTION v3.0</div>
+  <header class="mb-8 text-center">
+    <h1 class="text-3xl font-black text-slate-900 tracking-tight mb-2 uppercase" style="font-style:italic">Petro-Law AI Advisor</h1>
+    <p class="text-sm text-slate-500 font-medium">법제처 원문 기반 분석 · Groq AI · 여수 석유화학단지 특화</p>
+  </header>
+
+  <!-- STEP 1 -->
+  <div class="card">
+    <div class="s-label">1. 대상 법령 선택</div>
+    <div class="sel-wrap">
+      <select class="dropdown" id="lawSelect" onchange="onLawChange()">
+        <option value="">법령을 선택하세요</option>
+        <option value="001160|대기환경보전법">대기환경보전법</option>
+        <option value="001153|물환경보전법">물환경보전법</option>
+        <option value="001211|화학물질관리법">화학물질관리법</option>
+        <option value="001210|화학물질 등록 및 평가법">화학물질 등록 및 평가법</option>
+        <option value="001138|산업안전보건법">산업안전보건법</option>
+        <option value="001115|위험물안전관리법">위험물안전관리법</option>
+        <option value="001177|소음·진동관리법">소음·진동관리법</option>
+        <option value="001173|악취방지법">악취방지법</option>
+        <option value="001213|토양환경보전법">토양환경보전법</option>
+        <option value="001071|환경영향평가법">환경영향평가법</option>
+      </select>
     </div>
   </div>
-  <div class="hmeta">
-    <span id="lastupdate" style="color:var(--txd)">로딩 중...</span>
-    <div class="live"><div class="ldot"></div>LIVE</div>
-    <div id="clock">--:--:--</div>
-  </div>
-</header>
 
-<!-- 데이터 소스 상태 표시줄 -->
-<div class="datasrc-bar">
-  <div class="ds-item"><div class="ds-dot load" id="dot-rt"></div><span id="src-rt">현재기상...</span></div>
-  <div class="ds-item"><div class="ds-dot load" id="dot-fc"></div><span id="src-fc">시간별예보...</span></div>
-  <div class="ds-item"><div class="ds-dot load" id="dot-air"></div><span id="src-air">대기오염...</span></div>
-  <span style="color:rgba(74,96,128,.5)">|</span>
-  <span id="data-updated" style="color:var(--txd)">Actions 갱신시각: 수신 중...</span>
+  <!-- STEP 2 -->
+  <div class="card">
+    <div class="srow"><div class="dot" id="dot"></div><span id="gasMsg">법령 선택 후 자동 조회</span></div>
+    <div class="s-label">2. 시행일자 선택</div>
+    <div class="sel-wrap">
+      <select class="dropdown" id="dateSelect" disabled>
+        <option value="">법령을 먼저 선택하세요</option>
+      </select>
+    </div>
+    <div class="ibox ierr" id="errBox"></div>
+  </div>
+
+  <!-- 실행 -->
+  <button class="run-btn" id="runBtn" onclick="runAnalysis()">AI 분석 실행</button>
+  <div class="step-box" id="stepBox"></div>
+
+  <!-- 결과 -->
+  <div class="result-wrap" id="resultWrap" style="display:none">
+    <div class="flex justify-between items-start gap-3 mb-5 pb-4 border-b border-slate-100 flex-wrap">
+      <div>
+        <h3 class="text-xl font-black text-slate-800 mb-2" id="resTitle"></h3>
+        <div id="resBadges" class="flex flex-wrap gap-2"></div>
+      </div>
+      <button onclick="copyResult()"
+        style="flex-shrink:0;padding:8px 14px;border:1.5px solid #e2e8f0;border-radius:12px;background:white;font-family:'Noto Sans KR',sans-serif;font-size:12px;font-weight:700;color:#64748b;cursor:pointer"
+        onmouseover="this.style.borderColor='#6366f1';this.style.color='#4f46e5'"
+        onmouseout="this.style.borderColor='#e2e8f0';this.style.color='#64748b'">복사</button>
+    </div>
+    <div class="ibox" id="sourceNote"></div>
+    <div class="text-slate-700 text-sm leading-relaxed whitespace-pre-wrap font-medium mt-4" id="resContent"></div>
+    <div class="mt-5 pt-3 border-t border-slate-100 text-xs text-slate-400 flex gap-4 flex-wrap" id="resFooter"></div>
+  </div>
+
 </div>
-
-<div class="ticker">
-  <div class="tlbl">LIVE</div>
-  <div class="ttrack">
-    <div class="tinner">
-      <span>&#127777; 기온</span>&nbsp;<span class="v" id="tk-t">--</span>&nbsp;&nbsp;
-      <span>&#128167; 습도</span>&nbsp;<span class="v" id="tk-h">--</span>&nbsp;&nbsp;
-      <span>&#128168; 풍속</span>&nbsp;<span class="v" id="tk-w">--</span>&nbsp;&nbsp;
-      <span>PM2.5</span>&nbsp;<span class="v" id="tk-pm">--</span>&nbsp;&nbsp;
-      <span>SO2</span>&nbsp;<span class="v" id="tk-so2">--</span>&nbsp;&nbsp;
-      <span>&#916;T24h</span>&nbsp;<span class="v" id="tk-dt">--</span>&nbsp;&nbsp;
-      <span>&#128202; 현재등급</span>&nbsp;<span class="v" id="tk-lvl">--</span>&nbsp;&nbsp;
-      <!-- 반복 -->
-      <span>&#127777; 기온</span>&nbsp;<span class="v" id="tk-t2">--</span>&nbsp;&nbsp;
-      <span>&#128167; 습도</span>&nbsp;<span class="v" id="tk-h2">--</span>&nbsp;&nbsp;
-      <span>&#128168; 풍속</span>&nbsp;<span class="v" id="tk-w2">--</span>&nbsp;&nbsp;
-      <span>PM2.5</span>&nbsp;<span class="v" id="tk-pm2">--</span>&nbsp;&nbsp;
-      <span>SO2</span>&nbsp;<span class="v" id="tk-so2-2">--</span>&nbsp;&nbsp;
-      <span>&#916;T24h</span>&nbsp;<span class="v" id="tk-dt2">--</span>&nbsp;&nbsp;
-      <span>&#128202; 현재등급</span>&nbsp;<span class="v" id="tk-lvl2">--</span>&nbsp;&nbsp;
-    </div>
-  </div>
-</div>
-
-<div class="wrap">
-<!-- ══════ LEFT ══════ -->
-<div style="display:flex;flex-direction:column;gap:10px;">
-
-  <!-- 종합 위험 단계 -->
-  <div class="card">
-    <div class="ct">
-      <div class="ct-l">현재 종합 위험 단계</div>
-      <button class="btn" onclick="loadAll()">&#8635; 새로고침</button>
-    </div>
-    <div class="risk-main">
-      <div class="risk-badge safe" id="riskBadge">
-        <span class="spin"></span>
-      </div>
-      <div class="risk-name" id="riskName">데이터 수신 중</div>
-      <div class="risk-sub" id="riskSub">기상 데이터 분석 후 표시됩니다</div>
-      <div class="score-link" onclick="openModal('score')">&#128269; 계산 수식 &amp; 점수 확인</div>
-    </div>
-  </div>
-
-  <!-- 유형별 위험 단계 -->
-  <div class="card">
-    <div class="ct"><div class="ct-l">유형별 위험 단계</div></div>
-    <div class="rbars">
-      <div class="rrow">
-        <div class="rrh"><span style="font-size:11px">&#128308; 화공&#183;설비</span><span class="rlvl safe" id="rl-chem">--</span></div>
-        <div class="rrt"><div class="rrf c" id="bar-chem" style="width:0%"></div></div>
-        <div style="font-size:10px;color:var(--txd);margin-top:2px" id="trig-chem"><span class="spin"></span></div>
-      </div>
-      <div class="rrow">
-        <div class="rrh"><span style="font-size:11px">&#128993; 산업안전</span><span class="rlvl safe" id="rl-fall">--</span></div>
-        <div class="rrt"><div class="rrf f" id="bar-fall" style="width:0%"></div></div>
-        <div style="font-size:10px;color:var(--txd);margin-top:2px" id="trig-fall"><span class="spin"></span></div>
-      </div>
-      <div class="rrow">
-        <div class="rrh"><span style="font-size:11px">&#128309; 환경&#183;설비</span><span class="rlvl safe" id="rl-env">--</span></div>
-        <div class="rrt"><div class="rrf e" id="bar-env" style="width:0%"></div></div>
-        <div style="font-size:10px;color:var(--txd);margin-top:2px" id="trig-env"><span class="spin"></span></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 현재 기상 (단기예보 최신값) -->
-  <div class="card">
-    <div class="ct"><div class="ct-l">현재 기상 (단기예보)</div></div>
-    <div class="wgrid">
-      <div class="wi"><div class="wl">&#127777; 기온</div><div class="wv" id="w-t"><span class="spin"></span></div><div class="wsub" id="ws-t"></div></div>
-      <div class="wi"><div class="wl">&#128167; 습도</div><div class="wv" id="w-h"><span class="spin"></span></div></div>
-      <div class="wi"><div class="wl">&#128168; 풍속</div><div class="wv" id="w-w"><span class="spin"></span></div><div class="wsub" id="ws-w"></div></div>
-      <div class="wi"><div class="wl">&#127783; 강수</div><div class="wv" id="w-r"><span class="spin"></span></div></div>
-      <div class="wi"><div class="wl">SO&#x00B2;</div><div class="wv" id="w-so2"><span class="spin"></span></div></div>
-      <div class="wi"><div class="wl">PM&#x2082;.&#x2085;</div><div class="wv" id="w-pm"><span class="spin"></span></div><div class="wsub" id="ws-pm"></div></div>
-      <div class="wi"><div class="wl">NO&#x00B2;</div><div class="wv" id="w-no2"><span class="spin"></span></div></div>
-      <div class="wi"><div class="wl">&#916;T&#x2082;&#x2084;h</div><div class="wv" id="w-dt"><span class="spin"></span></div></div>
-    </div>
-  </div>
-
-  <!-- 단계별 관찰 가이드 -->
-  <div class="card">
-    <div class="ct"><div class="ct-l">단계별 관찰 가이드</div></div>
-    <div id="guideContent"><div style="color:var(--txd);font-size:11px;padding:8px;text-align:center">수신 후 표시</div></div>
-  </div>
-
-</div><!-- /left -->
-
-<!-- ══════ RIGHT ══════ -->
-<div class="rcol">
-
-  <!-- 오늘 8~18시 시간별 예보 (단기예보) -->
-  <div class="card">
-    <div class="ct">
-      <div class="ct-l">오늘 08~18시 시간별 위험도 (단기예보 기반)</div>
-    </div>
-    <div id="shortFcArea"><div style="text-align:center;padding:20px;color:var(--txd);font-size:11px"><span class="spin"></span>&nbsp; 단기예보 수신 중...</div></div>
-    <div id="shortFcPeak" class="fcpeak"></div>
-  </div>
-
-  <!-- 오늘 하루 전체 시간별 위험도 (00~23시) -->
-  <div class="card">
-    <div class="ct">
-      <div class="ct-l">오늘 하루 시간별 위험도 예측 (00~23시)</div>
-      <span style="font-size:9px;color:var(--txd);font-family:var(--mono)" id="allday-src"></span>
-    </div>
-    <div id="alldayArea"><div style="text-align:center;padding:20px;color:var(--txd);font-size:11px"><span class="spin"></span>&nbsp; 오늘 예보 수신 중...</div></div>
-    <div id="alldayMeta" style="margin-top:6px;font-size:9px;color:var(--txd);font-family:var(--mono)"></div>
-  </div>
-
-  <!-- 조건부 사고 사례 -->
-  <div class="card">
-    <div class="ct">
-      <div class="ct-l">현재 조건 관련 사고 사례</div>
-      <span style="font-size:9px;color:var(--txd);font-family:var(--mono)">위험 조건 시 표시 · 클릭 &rarr; 상세</span>
-    </div>
-    <div class="case-list">
-      <div class="no-case" id="noCase">현재 모든 지표 정상 — 표시할 사례 없음</div>
-      <div class="casec chem" id="cc-chem" onclick="openModal('m-chem')">
-        <div class="casec-h"><div class="casec-type">CHEMICAL · 가스누출/폭발</div><span class="casec-lvb alert" id="cc-lv-chem">경계</span></div>
-        <div class="casec-title">&#128308; 유증기 체류 &rarr; 폭발 위험</div>
-        <div class="casec-trig" id="cc-trig-chem">--</div>
-        <div class="casec-foot"><span>2019 여수NCC 화재 / 2012 세계박람회 폭발</span><span>상세 &rsaquo;</span></div>
-      </div>
-      <div class="casec fall" id="cc-fall" onclick="openModal('m-fall')">
-        <div class="casec-h"><div class="casec-type">INDUSTRIAL · 추락/낙상</div><span class="casec-lvb watch" id="cc-lv-fall">주의</span></div>
-        <div class="casec-title">&#128993; 고소작업 추락 위험</div>
-        <div class="casec-trig" id="cc-trig-fall">--</div>
-        <div class="casec-foot"><span>2021 여수 탑상 추락 / KOSHA 고온기 통계</span><span>상세 &rsaquo;</span></div>
-      </div>
-      <div class="casec env" id="cc-env" onclick="openModal('m-env')">
-        <div class="casec-h"><div class="casec-type">FACILITY · RTO/방지시설</div><span class="casec-lvb watch" id="cc-lv-env">주의</span></div>
-        <div class="casec-title">&#128309; 방지시설 이상 위험</div>
-        <div class="casec-trig" id="cc-trig-env">--</div>
-        <div class="casec-foot"><span>2022 여수산단 VOC 초과배출</span><span>상세 &rsaquo;</span></div>
-      </div>
-    </div>
-  </div>
-
-</div><!-- /rcol -->
-</div><!-- /wrap -->
-
-<!-- ═══ MODAL: 점수·수식 ═══ -->
-<div class="overlay" id="modal-score" onclick="if(event.target===this)closeModal('score')">
-  <div class="modal">
-    <div class="mhead"><div class="mtitle">&#128208; 예측 수식 &amp; 현재 점수</div><button class="mclose" onclick="closeModal('score')">&#10005;</button></div>
-    <div class="mbody">
-      <div class="msec"><div class="msec-t">단계 기준</div>
-        <table class="dtable">
-          <tr><th>단계</th><th>점수</th><th>의미</th><th>배경</th></tr>
-          <tr><td class="tok">안전</td><td>0~30%</td><td>정상 운영</td><td>위험 인자 없음</td></tr>
-          <tr><td style="color:var(--lv-caution)">조심</td><td>30~45%</td><td>모니터링 강화</td><td>경미한 인자 감지</td></tr>
-          <tr><td class="twn">주의</td><td>45~65%</td><td>점검 실시</td><td>복합 인자 감지</td></tr>
-          <tr><td class="tdg">경계</td><td>65%+</td><td>즉각 대응</td><td>임계 초과 복합</td></tr>
-        </table>
-      </div>
-      <div class="msec"><div class="msec-t">현재 점수</div>
-        <table class="dtable">
-          <tr><th>유형</th><th>점수</th><th>단계</th></tr>
-          <tr><td>화공&#183;설비</td><td id="sc-chem">--</td><td id="sl-chem">--</td></tr>
-          <tr><td>산업안전</td><td id="sc-fall">--</td><td id="sl-fall">--</td></tr>
-          <tr><td>환경&#183;설비</td><td id="sc-env">--</td><td id="sl-env">--</td></tr>
-          <tr><td><strong>종합</strong></td><td id="sc-total">--</td><td id="sl-total">--</td></tr>
-        </table>
-      </div>
-      <div class="msec"><div class="msec-t">사용 데이터 (날씨 기반 모델)</div>
-        <div style="font-size:11px;color:var(--txd);background:var(--sur2);border:1px solid var(--bdr);padding:10px;line-height:1.9;">
-          &#10004; 기온, 풍속, 습도, 강수량 — 기상청 단기예보<br>
-          &#10004; SO&#x00B2;, PM&#x2082;.&#x2085;, NO&#x00B2; — 에어코리아<br>
-          &#10004; 기온편차 &#916;T&#x2082;&#x2084;h — 단기예보 시계열 계산<br>
-          &#10007; 사고이력DB, 화학물질DB 등 — <span style="color:var(--lv-watch)">제외 (날씨 기반 모델로 충분)</span>
-        </div>
-      </div>
-      <div class="msec"><div class="msec-t">&#9312; 화공&#183;설비 수식</div>
-        <div class="formula"><div class="ft">P = sigmoid(z) · z =</div>
-          <span class="fcoef">2.8</span>&middot;<span class="fvar">W_low</span> + <span class="fcoef">1.9</span>&middot;<span class="fvar">&#916;T&#x2082;&#x2084;h</span> + <span class="fcoef">2.3</span>&middot;<span class="fvar">(H&#215;S)</span> - 1.2
-        </div>
-      </div>
-      <div class="msec"><div class="msec-t">&#9313; 산업안전 수식</div>
-        <div class="formula"><div class="ft">P = sigmoid(z) · z =</div>
-          <span class="fcoef">1.6</span>&middot;<span class="fvar">T_norm</span> + <span class="fcoef">0.8</span>&middot;<span class="fvar">W_max</span> + <span class="fcoef">1.2</span>&middot;<span class="fvar">R_rain</span> - 1.5
-        </div>
-      </div>
-      <div class="msec"><div class="msec-t">&#9314; 환경&#183;설비 수식</div>
-        <div class="formula"><div class="ft">P = sigmoid(z) · z =</div>
-          <span class="fcoef">2.1</span>&middot;<span class="fvar">PM_load</span> + <span class="fcoef">0.9</span>&middot;<span class="fvar">T_ext</span> + <span class="fcoef">1.4</span>&middot;<span class="fvar">Inv</span> - 1.8
-        </div>
-      </div>
-      <div class="msec"><div class="msec-t">현재 입력값</div>
-        <table class="dtable">
-          <tr><th>변수</th><th>현재값</th><th>임계</th><th>상태</th></tr>
-          <tr><td>&#916;T&#x2082;&#x2084;h</td><td id="fv-dt">--</td><td>&lt;5&#176;C</td><td id="fs-dt">--</td></tr>
-          <tr><td>풍속</td><td id="fv-w">--</td><td>&lt;3m/s</td><td id="fs-w">--</td></tr>
-          <tr><td>H&#215;S 복합</td><td id="fv-hs">--</td><td>&lt;0.70</td><td id="fs-hs">--</td></tr>
-          <tr><td>PM&#x2082;.&#x2085;</td><td id="fv-pm">--</td><td>&lt;50&#956;g/m&#x00B3;</td><td id="fs-pm">--</td></tr>
-          <tr><td>기온</td><td id="fv-t">--</td><td>&lt;25&#176;C</td><td id="fs-t">--</td></tr>
-        </table>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ MODAL: 화공 사례 ═══ -->
-<div class="overlay" id="modal-m-chem" onclick="if(event.target===this)closeModal('m-chem')">
-  <div class="modal">
-    <div class="mhead"><div class="mtitle" style="color:var(--lv-alert)">&#128308; 화공&#183;설비 — 메커니즘 &amp; 사례</div><button class="mclose" onclick="closeModal('m-chem')">&#10005;</button></div>
-    <div class="mbody">
-      <div class="msec"><div class="msec-t">발현 메커니즘</div>
-        <div style="background:var(--sur2);border:1px solid var(--bdr);padding:10px;font-size:11px;line-height:2;">
-          풍속 &lt; 3m/s &rarr; 유증기 배관 주변 체류<br>
-          + &#916;T 급변 &rarr; 가스켓&#183;플랜지 미세 누출<br>
-          + 고온&#183;습도&#183;SO&#x00B2; 복합 &rarr; 부식 가속<br>
-          <strong style="color:var(--lv-alert)">&darr; LFL 도달 + 점화원 &rarr; 폭발</strong>
-        </div>
-      </div>
-      <div class="msec"><div class="msec-t">현재 트리거 상태</div>
-        <table class="dtable">
-          <tr><th>인자</th><th>현재값</th><th>임계</th><th>판정</th></tr>
-          <tr><td>저풍속</td><td id="m1-w">--</td><td>&lt;3.0m/s</td><td id="m1-ws">--</td></tr>
-          <tr><td>&#916;T&#x2082;&#x2084;h</td><td id="m1-dt">--</td><td>&lt;5.0&#176;C</td><td id="m1-dts">--</td></tr>
-          <tr><td>H&#215;S</td><td id="m1-hs">--</td><td>&lt;0.70</td><td id="m1-hss">--</td></tr>
-        </table>
-      </div>
-      <div class="msec"><div class="msec-t">실제 사례</div>
-        <div class="rcase"><div class="rcase-title">&#127470;&#127472; 2019. 여수 NCC 유증기 화재</div><span class="rl rl-d">화재</span><span class="rl rl-w">풍속 2.0m/s</span>플랜지 누출 &rarr; 유증기 체류 &rarr; 화재. 부상 3명.</div>
-        <div class="rcase"><div class="rcase-title">&#127470;&#127472; 2012. 여수 세계박람회 직전 폭발</div><span class="rl rl-d">폭발</span><span class="rl rl-w">&#916;T 8&#176;C</span>야간&#8594;주간 급등 &rarr; 폭발. 사망 1명.</div>
-        <div class="rcase"><div class="rcase-title">&#127482;&#127480; 2005. 텍사스 BP 정유공장</div><span class="rl rl-d">대형폭발</span>저풍속 유증기 체류 &rarr; 폭발. 사망 15명.</div>
-      </div>
-      <div class="msec"><div class="msec-t">즉시 조치</div>
-        <div style="font-size:11px;line-height:2;color:var(--tx)">&#9312; 플랜지 부위 가스 농도 수동 측정<br>&#9313; 환기팬 최대 출력<br>&#9314; 용접&#183;불꽃 작업 즉시 중단<br>&#9315; 비상 연락 체계 준비</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ MODAL: 추락 사례 ═══ -->
-<div class="overlay" id="modal-m-fall" onclick="if(event.target===this)closeModal('m-fall')">
-  <div class="modal">
-    <div class="mhead"><div class="mtitle" style="color:var(--lv-watch)">&#128993; 산업안전 — 추락&#183;낙상 사례</div><button class="mclose" onclick="closeModal('m-fall')">&#10005;</button></div>
-    <div class="mbody">
-      <div class="msec"><div class="msec-t">현재 트리거</div>
-        <table class="dtable">
-          <tr><th>인자</th><th>현재값</th><th>임계</th><th>판정</th></tr>
-          <tr><td>기온</td><td id="m2-t">--</td><td>&lt;25&#176;C</td><td id="m2-ts">--</td></tr>
-          <tr><td>강수량</td><td id="m2-r">--</td><td>&lt;5mm/h</td><td id="m2-rs">--</td></tr>
-        </table>
-      </div>
-      <div class="msec"><div class="msec-t">실제 사례</div>
-        <div class="rcase"><div class="rcase-title">&#127470;&#127472; 2021. 여수 탑상 작업 중 추락 사망</div><span class="rl rl-w">추락</span><span class="rl rl-w">기온 31&#176;C</span>열피로 &rarr; 비계 발판 이탈 &rarr; 추락 사망.</div>
-        <div class="rcase"><div class="rcase-title">산업안전보건공단 통계 (2020)</div><span class="rl rl-w">통계</span>7~8월 고온기 추락 사고 비고온기 대비 <strong style="color:var(--lv-watch)">34% 증가.</strong></div>
-      </div>
-      <div class="msec"><div class="msec-t">즉시 조치</div>
-        <div style="font-size:11px;line-height:2;color:var(--tx)">&#9312; 안전대 체결 재확인<br>&#9313; 30분마다 수분 보충 강제<br>&#9314; 2인 1조 작업 원칙</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ MODAL: RTO 사례 ═══ -->
-<div class="overlay" id="modal-m-env" onclick="if(event.target===this)closeModal('m-env')">
-  <div class="modal">
-    <div class="mhead"><div class="mtitle" style="color:var(--lv-caution)">&#128309; 환경&#183;설비 — RTO 사례</div><button class="mclose" onclick="closeModal('m-env')">&#10005;</button></div>
-    <div class="mbody">
-      <div class="msec"><div class="msec-t">현재 트리거</div>
-        <table class="dtable">
-          <tr><th>인자</th><th>현재값</th><th>임계</th><th>판정</th></tr>
-          <tr><td>PM&#x2082;.&#x2085;</td><td id="m3-pm">--</td><td>&lt;50&#956;g/m&#x00B3;</td><td id="m3-pms">--</td></tr>
-          <tr><td>기온</td><td id="m3-t">--</td><td>&lt;25&#176;C</td><td id="m3-ts">--</td></tr>
-        </table>
-      </div>
-      <div class="msec"><div class="msec-t">실제 사례</div>
-        <div class="rcase"><div class="rcase-title">&#127470;&#127472; 2022. 여수 산단 VOC 초과 배출</div><span class="rl" style="background:rgba(56,189,248,.1);color:var(--lv-caution);border:1px solid rgba(56,189,248,.3)">환경위반</span>고농도 황사 &rarr; RTO 폐색 &rarr; 초과배출. 과징금 2억.</div>
-      </div>
-      <div class="msec"><div class="msec-t">즉시 조치</div>
-        <div style="font-size:11px;line-height:2;color:var(--tx)">&#9312; RTO 필터 차압 확인<br>&#9313; 배출구 역압 모니터링<br>&#9314; 예비 필터 교체 준비</div>
-      </div>
-    </div>
-  </div>
-</div>
-
 <script>
-'use strict';
+// ★ GAS URL
+const GAS = "https://script.google.com/macros/s/AKfycby_KWIZLtk0x2pbi1qyEJ0ahAucbyukwzFF_UAgWCCb4lmf4Xqj1eESgFfdPzkY7MSTtQ/exec";
 
-// ══════════════════════════════════════════
-//  전역 데이터
-// ══════════════════════════════════════════
-const D = {
-  temp:null, hum:null, wind:null, rain:null,
-  so2:null,  no2:null, pm25:null, dt24:null,
-  tempHist: [],
-  todayFc:  [],   // 오늘 0~23시 [{hour,temp,wind,rain,hum,sky,pty}]
-  loaded:   false
-};
+let curLawId="", curLawName="", lastResult=null;
 
-// ══════════════════════════════════════════
-//  Open-Meteo 폴백 (Actions 파일 없을 때)
-// ══════════════════════════════════════════
-async function fetchOpenMeteo() {
-  const [wr, ar] = await Promise.allSettled([
-    fetch(`https://api.open-meteo.com/v1/forecast?latitude=34.7604&longitude=127.6622&current=temperature_2m,relative_humidity_2m,wind_speed_10m,precipitation&hourly=temperature_2m,wind_speed_10m,precipitation,relative_humidity_2m&timezone=Asia%2FSeoul&forecast_days=7`),
-    fetch(`https://air-quality-api.open-meteo.com/v1/air-quality?latitude=34.7604&longitude=127.6622&current=pm2_5,nitrogen_dioxide,sulphur_dioxide&timezone=Asia%2FSeoul`)
-  ]);
-
-  if (wr.status==='fulfilled' && wr.value.ok) {
-    const j = await wr.value.json();
-    const c = j.current;
-    const t = c.temperature_2m;
-    if (isValidTemp(t)) {
-      D.temp = t;
-      D.hum  = c.relative_humidity_2m;
-      D.wind = +(c.wind_speed_10m / 3.6).toFixed(1);
-      D.rain = c.precipitation;
-    }
-
-    // 오늘 전체 시간별 예보 (0~23시)
-    const today = new Date(Date.now()+9*3600000).toISOString().slice(0,10);
-    D.todayFc = [];
-    j.hourly.time.forEach((t2,i) => {
-      if (!t2.startsWith(today)) return;
-      const h = parseInt(t2.slice(11,13));
-      const tmp = j.hourly.temperature_2m[i];
-      if (!isValidTemp(tmp)) return;
-      D.todayFc.push({
-        hour: h,
-        temp: tmp,
-        wind: +(j.hourly.wind_speed_10m[i]/3.6).toFixed(1),
-        rain: j.hourly.precipitation[i] || 0,
-        hum:  j.hourly.relative_humidity_2m[i] || 60,
-        sky: '1', pty: '0'
-      });
-    });
-    setSrc('rt','fallback','Open-Meteo (대체)');
-    setSrc('fc','fallback','Open-Meteo (대체)');
-  }
-
-  if (ar.status==='fulfilled' && ar.value.ok) {
-    const j = await ar.value.json();
-    const c = j.current;
-    if (!isNaN(c.pm2_5) && c.pm2_5>=0 && c.pm2_5<1000) {
-      D.pm25 = c.pm2_5;
-      D.no2  = +(c.nitrogen_dioxide/1000).toFixed(4);
-      D.so2  = +(c.sulphur_dioxide/1000).toFixed(4);
-    }
-    setSrc('air','fallback','Open-Meteo Air (대체)');
-  }
-}
-
-// ══════════════════════════════════════════
-//  GitHub Actions가 저장한 JSON 읽기
-// ══════════════════════════════════════════
-async function loadActions() {
-  let anyOk = false;
-
-  // 메타 정보
-  try {
-    const r = await fetch('./data/meta.json?'+Date.now());
-    if (r.ok) {
-      const j = await r.json();
-      if (j.updated) setT('data-updated', 'Actions 갱신: '+j.updated);
-    }
-  } catch(_) {}
-
-  // 단기예보 → 현재 기상값 + 오늘 시간별
-  try {
-    const r = await fetch('./data/shortterm.json?'+Date.now());
-    if (r.ok) {
-      const j = await r.json();
-      const items = j?.response?.body?.items?.item;
-      if (items?.length > 0) {
-        const today = items[0].fcstDate;
-        const byTime = {};
-        items.forEach(it => {
-          if (it.fcstDate !== today) return;
-          const h = parseInt(it.fcstTime.slice(0,2));
-          if (!byTime[h]) byTime[h] = {};
-          byTime[h][it.category] = it.fcstValue;
-        });
-
-        // 현재 시각 기준 가장 가까운 예보값을 현재 날씨로
-        const nowH = new Date(Date.now()+9*3600000).getUTCHours();
-        const hours = Object.keys(byTime).map(Number).sort((a,b)=>a-b);
-        const nearH = hours.reduce((prev,cur) => Math.abs(cur-nowH)<Math.abs(prev-nowH)?cur:prev, hours[0]);
-        if (byTime[nearH]) {
-          const d = byTime[nearH];
-          const t = parseFloat(d.TMP ?? 'NaN');
-          if (isValidTemp(t)) {
-            D.temp = t;
-            D.hum  = parseFloat(d.REH ?? '60');
-            D.wind = parseFloat(d.WSD ?? '3');
-            D.rain = d.PCP==='강수없음' ? 0 : parseFloat(d.PCP ?? '0');
-            // dt24: 6시간 전 기온과 비교
-            const prev6H = hours.find(h => Math.abs(h-(nowH-6)) < 2);
-            if (prev6H && byTime[prev6H]?.TMP) {
-              D.dt24 = +Math.abs(t - parseFloat(byTime[prev6H].TMP)).toFixed(1);
-            } else {
-              D.dt24 = 1;
-            }
-            anyOk = true;
-          }
-        }
-
-        // 오늘 전체 시간별 예보 (0~23시)
-        D.todayFc = [];
-        for (let h=0; h<=23; h++) {
-          const d2 = byTime[h];
-          if (!d2) continue;
-          const tmp = parseFloat(d2.TMP ?? 'NaN');
-          if (!isValidTemp(tmp)) continue;
-          D.todayFc.push({
-            hour: h,
-            temp: tmp,
-            wind: parseFloat(d2.WSD ?? '3'),
-            rain: d2.PCP==='강수없음' ? 0 : parseFloat(d2.PCP ?? '0'),
-            hum:  parseFloat(d2.REH ?? '60'),
-            sky:  d2.SKY ?? '1',   // 1맑음 3구름많음 4흐림
-            pty:  d2.PTY ?? '0'    // 0없음 1비 2비/눈 3눈 4소나기
-          });
-        }
-        setSrc('rt','ok','기상청 단기예보 (Actions)');
-        setSrc('fc','ok','기상청 단기예보 (Actions)');
-      }
-    }
-  } catch(_) {}
-
-  // 에어코리아
-  try {
-    const r = await fetch('./data/air.json?'+Date.now());
-    if (r.ok) {
-      const j = await r.json();
-      const item = j?.response?.body?.items?.[0];
-      if (item) {
-        const p = parseFloat(item.pm25Value ?? 'NaN');
-        if (!isNaN(p) && p>=0 && p<1000) {
-          D.pm25 = p;
-          D.so2  = parseFloat(item.so2Value  ?? 'NaN') || null;
-          D.no2  = parseFloat(item.no2Value  ?? 'NaN') || null;
-          setSrc('air','ok','에어코리아 (Actions)');
-          anyOk = true;
-        }
-      }
-    }
-  } catch(_) {}
-
-  return anyOk;
-}
-
-// ══════════════════════════════════════════
-//  메인 로드 함수
-// ══════════════════════════════════════════
-async function loadAll() {
-  setT('lastupdate','로딩 중...');
-  setSrcAll('load','수신 중...');
-
-  const actionsOk = await loadActions();
-
-  // Actions 데이터 없으면 Open-Meteo 폴백
-  if (!actionsOk || D.temp === null) {
-    await fetchOpenMeteo();
-  }
-
-  D.loaded = true;
-  renderAll();
-  setT('lastupdate','갱신: '+new Date().toLocaleTimeString('ko-KR',{hour12:false}));
-}
-
-// ══════════════════════════════════════════
-//  위험도 계산 모델
-// ══════════════════════════════════════════
-function sigmoid(z) { return 1/(1+Math.exp(-z)); }
-function isValidTemp(t) { return !isNaN(t) && t > -50 && t < 60; }
-
-function calcRisk(t, h, w, r, s, p, dt) {
-  const T=t??20, H=h??60, W=w??5, R=r??0;
-  const S=s??0.005, P=p??20, DT=dt??1;
-  const wLow = Math.max(0,(3.0-W)/3.0);
-  const HS   = Math.min(1,(H/100)*(S/0.05));
-  const dtN  = Math.min(1,DT/10);
-  const tN   = Math.min(1,Math.max(0,(T-20)/20));
-  const pmN  = Math.min(1,P/150);
-  const invN = pmN>0.3 ? Math.min(1,(pmN-0.3)*2) : 0;
-  const pChem = sigmoid(-1.2 + 2.8*wLow + 1.9*dtN  + 2.3*HS);
-  const pFall = sigmoid(-1.5 + 1.6*tN   + 0.8*(W/15) + 1.2*Math.min(1,R/20));
-  const pEnv  = sigmoid(-1.8 + 2.1*pmN  + 0.9*(tN*.8) + 1.4*invN);
-  const total = pChem*.5 + pFall*.3 + pEnv*.2;
-  return { pChem, pFall, pEnv, total, wLow, HS, dtN, tN, pmN };
-}
-
-// 중기예보 날씨 코드 → 위험 인자 추정
-function midRisk(wf, minT, maxT) {
-  const desc = wf || '';
-  let rainMult = desc.includes('비') ? 1.4 : desc.includes('소나기') ? 1.2 : 1.0;
-  let windMult = desc.includes('강풍') ? 1.3 : 1.0;
-  const avgT = (isNaN(maxT)||isNaN(minT)) ? 22 : (maxT+minT)/2;
-  const estWind = desc.includes('강풍') ? 8 : 3.5;
-  const estRain = desc.includes('비') ? 5 : 0;
-  const estHum  = desc.includes('비')||desc.includes('흐림') ? 75 : 60;
-  const R = calcRisk(avgT, estHum, estWind, estRain, 0.005, 20, Math.abs(maxT-minT)*0.5);
-  return R.total;
-}
-
-// ══════════════════════════════════════════
-//  단계 분류
-// ══════════════════════════════════════════
-function levelOf(v) {
-  if (v>=.65) return 'alert';
-  if (v>=.45) return 'watch';
-  if (v>=.30) return 'caution';
-  return 'safe';
-}
-const LVL_KO = {safe:'안전', caution:'조심', watch:'주의', alert:'경계'};
-const LVL_NAME = {safe:'정상 운영 중', caution:'모니터링 강화', watch:'점검 즉시 실시', alert:'즉각 대응 필요'};
-const WF_ICON = {'맑음':'&#9728;','구름많음':'&#9729;','흐림':'&#9729;','비':'&#127783;','소나기':'&#127783;','눈':'&#10052;','정보없음':'&#8212;'};
-
-function wfIcon(wf) {
-  for (const [k,v] of Object.entries(WF_ICON)) { if ((wf||'').includes(k)) return v; }
-  return '&#9728;';
-}
-
-function dayLabel(dateStr) {
-  const d = new Date(dateStr);
-  const days = ['일','월','화','수','목','금','토'];
-  return `${d.getMonth()+1}/${d.getDate()}(${days[d.getDay()]})`;
-}
-
-// ══════════════════════════════════════════
-//  전체 UI 렌더
-// ══════════════════════════════════════════
-function renderAll() {
-  const { pChem, pFall, pEnv, total, wLow, HS } = calcRisk(
-    D.temp, D.hum, D.wind, D.rain, D.so2, D.pm25, D.dt24
-  );
-  const lvl = levelOf(total);
-  const T=D.temp??20, H=D.hum??60, W=D.wind??5, R=D.rain??0;
-  const S=D.so2??0.005, P=D.pm25??20, DT=D.dt24??1;
-
-  // ── 메인 배지 ──
-  const badge = document.getElementById('riskBadge');
-  badge.className = `risk-badge ${lvl}`;
-  badge.textContent = LVL_KO[lvl];
-  setT('riskName', LVL_NAME[lvl]);
-
-  const trigs=[];
-  if (W<3)           trigs.push(`저풍속 ${W.toFixed(1)}m/s`);
-  if (DT>=5)         trigs.push(`ΔT ${DT.toFixed(1)}°C`);
-  if (P>=35)         trigs.push(`PM ${P.toFixed(0)}μg/m³`);
-  if (T>=28)         trigs.push(`고온 ${T.toFixed(1)}°C`);
-  setT('riskSub', trigs.length ? trigs.join(' · ')+' 감지' : '현재 주요 위험 인자 없음');
-
-  // ── 유형별 ──
-  const setBar = (pid, bid, tid, v, trig) => {
-    const lv=levelOf(v);
-    const el=document.getElementById(pid);
-    if(el){el.className=`rlvl ${lv}`;el.textContent=LVL_KO[lv];}
-    const b=document.getElementById(bid); if(b) b.style.width=(v*100).toFixed(1)+'%';
-    setH(tid, trig);
-  };
-  setBar('rl-chem','bar-chem','trig-chem', pChem,
-    `저풍속 ${W.toFixed(1)}m/s · ΔT ${DT.toFixed(1)}°C · H×S ${HS.toFixed(2)}`);
-  setBar('rl-fall','bar-fall','trig-fall', pFall,
-    `기온 ${T.toFixed(1)}°C · 강수 ${R.toFixed(1)}mm/h`);
-  setBar('rl-env','bar-env','trig-env', pEnv,
-    `PM2.5 ${P!==null&&!isNaN(P)?P.toFixed(0):'?'}μg/m³`);
-
-  // ── 기상 카드 ──
-  const lv = (v,t,dir='o') => v!==null&&!isNaN(v) ? (dir==='o'?v>=t:v<=t)?'w':'' : '';
-  setWv('w-t', T,  '°C', lv(T,28));
-  setWv('w-h', H,  '%',  '');
-  setWv('w-w', W,  'm/s',lv(W,3,'u'));
-  setWv('w-r', R===0?'0.0':R.toFixed(1), 'mm/h', lv(R,5));
-  setWv('w-so2', S!==null&&!isNaN(S)?S.toFixed(3):null, 'ppm', lv(S,0.05));
-  setWv('w-pm',  P!==null&&!isNaN(P)?P.toFixed(0) :null, 'μg/m³', P>=75?'r':P>=35?'w':'');
-  setWv('w-no2', D.no2!==null&&!isNaN(D.no2)?D.no2.toFixed(3):null, 'ppm', lv(D.no2,0.06));
-  setWv('w-dt', DT.toFixed(1), '°C', lv(DT,5));
-
-  if (W<3)   setH('ws-w', '<span style="color:var(--lv-watch);font-size:9px">⚠ 저풍속</span>');
-  if (T>=28)  setH('ws-t', '<span style="color:var(--lv-watch);font-size:9px">⚠ 고온</span>');
-  const pmG = P>=75?'🔴 나쁨':P>=35?'🟡 보통':'🟢 좋음';
-  setH('ws-pm',`<span style="color:${P>=75?'var(--lv-alert)':P>=35?'var(--lv-watch)':'var(--lv-safe)'};font-size:9px">${pmG}</span>`);
-
-  // ── 가이드 ──
-  renderGuide(lvl);
-
-  // ── 오늘 하루 전체 시간별 차트 ──
-  renderAlldayFc();
-
-  // ── 사례 카드 ──
-  buildCases({ pChem, pFall, pEnv });
-
-  // ── 수식 모달 값 ──
-  setT('sc-chem', (pChem*100).toFixed(1)+'%'); setH('sl-chem', lvlSpan(levelOf(pChem)));
-  setT('sc-fall', (pFall*100).toFixed(1)+'%'); setH('sl-fall', lvlSpan(levelOf(pFall)));
-  setT('sc-env',  (pEnv*100).toFixed(1)+'%');  setH('sl-env',  lvlSpan(levelOf(pEnv)));
-  setT('sc-total',(total*100).toFixed(1)+'%'); setH('sl-total',lvlSpan(lvl));
-  setH('fv-dt', DT.toFixed(1)+'°C');  setH('fs-dt', stH(DT,5));
-  setH('fv-w',  W.toFixed(1)+'m/s');  setH('fs-w',  stH(W,3,'u'));
-  setH('fv-hs', HS.toFixed(3));        setH('fs-hs', stH(HS,0.7));
-  setH('fv-pm', P!==null&&!isNaN(P)?P.toFixed(0)+'μg/m³':'?'); setH('fs-pm', stH(P??0,50));
-  setH('fv-t',  T.toFixed(1)+'°C');   setH('fs-t',  stH(T,25));
-
-  // ── 사례 모달 값 ──
-  setH('m1-w',  W.toFixed(1)+'m/s');  setH('m1-ws',  stH(W,3,'u'));
-  setH('m1-dt', DT.toFixed(1)+'°C'); setH('m1-dts', stH(DT,5));
-  setH('m1-hs', HS.toFixed(3));       setH('m1-hss', stH(HS,0.7));
-  setH('m2-t',  T.toFixed(1)+'°C');  setH('m2-ts',  stH(T,25));
-  setH('m2-r',  R.toFixed(1)+'mm/h');setH('m2-rs',  stH(R,5));
-  setH('m3-pm', P!==null&&!isNaN(P)?P.toFixed(0)+'μg/m³':'?'); setH('m3-pms', stH(P??0,50));
-  setH('m3-t',  T.toFixed(1)+'°C');  setH('m3-ts',  stH(T,25));
-
-  // ── 티커 ──
-  const tk = (a,b,v,c) => { [a,b].forEach(id=>{ const e=document.getElementById(id); if(e){e.innerHTML=v;e.className=c;}}); };
-  tk('tk-t','tk-t2',   T.toFixed(1)+'°C',   T>=28?'w':'v');
-  tk('tk-h','tk-h2',   H.toFixed(0)+'%',    'v');
-  tk('tk-w','tk-w2',   W.toFixed(1)+'m/s'+(W<3?' ⚠':''), W<3?'w':'v');
-  tk('tk-pm','tk-pm2', P!==null&&!isNaN(P)?P.toFixed(0)+'μg':'?', P>=35?'w':'v');
-  tk('tk-so2','tk-so2-2', S!==null&&!isNaN(S)?S.toFixed(3)+'ppm':'?', 'v');
-  tk('tk-dt','tk-dt2', DT.toFixed(1)+'°C',  DT>=5?'w':'v');
-  tk('tk-lvl','tk-lvl2', LVL_KO[lvl], lvl==='alert'?'r':lvl==='watch'?'w':lvl==='caution'?'c':'g');
-}
-
-// ── 단기예보 시간별 차트 ──
-function renderShortFc() {
-  const fc = D.shortFc;
-  if (!fc.length) {
-    setH('shortFcArea','<div style="text-align:center;padding:16px;color:var(--lv-watch);font-size:11px">⚠ 단기예보 데이터 없음 — GitHub Actions 미실행 또는 대체 데이터 사용 중</div>');
-    return;
-  }
-  const risks = fc.map(f => {
-    const R = calcRisk(f.temp, f.hum, f.wind, f.rain, D.so2, D.pm25, D.dt24);
-    return { ...f, risk: R.total, lv: levelOf(R.total) };
+// ── JSONP 호출 ─────────────────────────────────────────
+function jsonp(params, cbName, ms) {
+  return new Promise(function(resolve, reject) {
+    var old = document.getElementById("__s"+cbName);
+    if (old) old.remove();
+    var timer = setTimeout(function() {
+      delete window[cbName];
+      reject(new Error("응답 없음 ("+ms/1000+"초 초과)"));
+    }, ms);
+    window[cbName] = function(data) {
+      clearTimeout(timer);
+      delete window[cbName];
+      resolve(data);
+    };
+    var s = document.createElement("script");
+    s.id  = "__s"+cbName;
+    s.src = GAS + "?" + new URLSearchParams(params).toString();
+    s.onerror = function() {
+      clearTimeout(timer);
+      delete window[cbName];
+      reject(new Error("GAS 로드 실패"));
+    };
+    document.body.appendChild(s);
   });
-  const maxR = Math.max(...risks.map(r=>r.risk));
-  const peak = risks.find(r=>r.risk===maxR);
+}
 
-  setH('shortFcArea',`
-    <div class="fcwrap">
-      <div class="fcbars">
-        ${risks.map(s=>`
-          <div class="fccol">
-            <div class="fcbarwrap">
-              <div class="fcbar ${s.lv}" style="height:${(s.risk/maxR*100).toFixed(0)}%" title="${s.hour}시 ${(s.risk*100).toFixed(1)}%"></div>
-            </div>
-            <div class="fclvl ${s.lv}">${LVL_KO[s.lv]}</div>
-            <div class="fctemp">${s.temp.toFixed(0)}°</div>
-            <div class="fchour">${String(s.hour).padStart(2,'0')}시</div>
-          </div>`).join('')}
-      </div>
-    </div>`);
+// ── 법령 선택 ──────────────────────────────────────────
+async function onLawChange() {
+  var val = document.getElementById("lawSelect").value;
+  var sel = document.getElementById("dateSelect");
+  var err = document.getElementById("errBox");
+  err.classList.remove("show");
 
-  if (peak) {
-    const c = {safe:'var(--lv-safe)',caution:'var(--lv-caution)',watch:'var(--lv-watch)',alert:'var(--lv-alert)'}[peak.lv];
-    setH('shortFcPeak', `▶ 최고 위험: <span style="color:${c};font-weight:700">${String(peak.hour).padStart(2,'0')}시 ${LVL_KO[peak.lv]} (${(peak.risk*100).toFixed(1)}%)</span> — 기온 ${peak.temp.toFixed(1)}°C · 풍속 ${peak.wind.toFixed(1)}m/s`);
+  if (!val) {
+    sel.innerHTML="<option value=''>법령을 먼저 선택하세요</option>";
+    sel.disabled=true; setDot("","법령 선택 후 자동 조회"); return;
+  }
+
+  var parts=val.split("|"); curLawId=parts[0]; curLawName=parts[1];
+  sel.disabled=true; sel.innerHTML="<option>조회 중...</option>";
+  setDot("ing","법제처 연결 중...");
+
+  try {
+    var data = await jsonp(
+      {action:"dates", id:curLawId, callback:"__cb_d"},
+      "__cb_d", 15000
+    );
+    if (data.error) { setDot("err","오류"); sel.innerHTML="<option>오류</option>"; showErr("법제처 오류: "+data.error); return; }
+    if (!data.dates||!data.dates.length) { setDot("ok","연결됨"); sel.innerHTML="<option value=''>시행일 없음</option>"; return; }
+
+    setDot("ok","연결됨 ✓ ("+data.dates.length+"건)");
+    sel.innerHTML="<option value=''>시행일을 선택하세요</option>"+
+      data.dates.map(function(d){
+        var f=d.slice(0,4)+"년 "+d.slice(4,6)+"월 "+d.slice(6,8)+"일";
+        return '<option value="'+d+'">'+f+' 시행분</option>';
+      }).join("");
+    sel.disabled=false;
+
+  } catch(e) {
+    setDot("err","연결 실패");
+    sel.innerHTML="<option value=''>연결 실패</option>";
+    showErr("<b>연결 실패:</b> "+e.message+"<br><br>GitHub Pages 주소(https://)로 열어야 GAS가 작동합니다.<br>로컬 파일(file://)에서는 보안상 차단됩니다.");
   }
 }
 
-// ── 오늘 하루 전체 시간별 차트 (00~23시) ──
-function renderAlldayFc() {
-  const fc = D.todayFc;
-  if (!fc.length) {
-    setH('alldayArea','<div style="text-align:center;padding:16px;color:var(--lv-watch);font-size:11px">⚠ 오늘 예보 데이터 없음 — GitHub Actions 미실행 또는 수신 오류</div>');
-    return;
-  }
+// ── AI 분석 ────────────────────────────────────────────
+async function runAnalysis() {
+  if (!curLawId) { alert("법령을 선택해주세요."); return; }
+  var date = document.getElementById("dateSelect").value;
+  if (!date) { alert("시행일을 선택해주세요."); return; }
 
-  const nowH = new Date(Date.now()+9*3600000).getUTCHours();
+  var btn=document.getElementById("runBtn"), step=document.getElementById("stepBox");
+  btn.disabled=true; btn.innerHTML='<div class="spin"></div>&ensp;분석 중...';
+  document.getElementById("resultWrap").style.display="none";
+  step.classList.add("show"); step.textContent="법제처에서 "+curLawName+" 원문 가져오는 중...";
 
-  // 각 시간 위험도 계산
-  const slots = fc.map(f => {
-    const R = calcRisk(f.temp, f.hum, f.wind, f.rain, D.so2, D.pm25, D.dt24);
-    return { ...f, pChem:R.pChem, pFall:R.pFall, pEnv:R.pEnv,
-             risk:R.total, lv:levelOf(R.total) };
-  });
+  try {
+    step.textContent="AI가 원문 분석 중... (최대 60초 소요)";
+    var data = await jsonp(
+      {action:"analyze", id:curLawId, date:date, lawName:curLawName, callback:"__cb_a"},
+      "__cb_a", 60000
+    );
+    if (data.error) throw new Error(data.error);
 
-  const maxR   = Math.max(...slots.map(s=>s.risk));
-  const peak   = slots.reduce((a,b)=>b.risk>a.risk?b:a, slots[0]);
-  const safest = slots.reduce((a,b)=>b.risk<a.risk?b:a, slots[0]);
+    lastResult={lawName:curLawName, date:date, content:data.content};
+    var df=date.slice(0,4)+"-"+date.slice(4,6)+"-"+date.slice(6,8);
 
-  // 날씨 아이콘
-  const skyIcon = (sky, pty) => {
-    if (pty==='1'||pty==='4') return '🌧';
-    if (pty==='2') return '🌨';
-    if (pty==='3') return '❄';
-    if (sky==='4') return '☁';
-    if (sky==='3') return '⛅';
-    return '☀';
-  };
+    document.getElementById("resTitle").textContent=curLawName;
+    document.getElementById("resBadges").innerHTML=
+      '<span class="badge bi">'+df+' 시행</span>'+
+      '<span class="badge bo" style="margin-left:6px">석유화학 현장</span>'+
+      (data.tokens?'<span class="badge bg" style="margin-left:6px">토큰 '+data.tokens.toLocaleString()+'</span>':"");
 
-  // 현재 시간 표시용 인덱스
-  const nowIdx = slots.findIndex(s=>s.hour===nowH);
+    var note=document.getElementById("sourceNote");
+    if (data.hasSource) {
+      note.className="ibox iok show";
+      note.textContent="법제처 원문 기반 분석 — 실제 개정 조문을 토대로 작성되었습니다.";
+    } else {
+      note.className="ibox iwarn show";
+      note.textContent="원문 미확인 — AI 추정값이 포함될 수 있습니다. 반드시 법제처 원문을 직접 확인하세요.";
+    }
 
-  // ── 차트 HTML ──
-  // 가로 스크롤 타임라인 형태
-  const bars = slots.map((s,i) => {
-    const isNow = s.hour === nowH;
-    const isPast = s.hour < nowH;
-    const barH = maxR > 0 ? (s.risk/maxR*100).toFixed(0) : 4;
-    const opacity = isPast ? '0.35' : '1';
-    const nowMark = isNow
-      ? `<div style="position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-size:9px;color:var(--ac);white-space:nowrap;font-family:var(--mono)">▼NOW</div>`
-      : '';
-    return `
-      <div class="fccol" style="opacity:${opacity};position:relative;min-width:38px;">
-        ${nowMark}
-        <div class="fcbarwrap">
-          <div class="fcbar ${s.lv}" style="height:${barH}%"
-            title="${s.hour}시 — ${LVL_KO[s.lv]} (${(s.risk*100).toFixed(1)}%)&#10;기온 ${s.temp.toFixed(1)}°C · 풍속 ${s.wind.toFixed(1)}m/s"></div>
-        </div>
-        <div class="fclvl ${s.lv}">${LVL_KO[s.lv]}</div>
-        <div style="font-size:9px;color:var(--txd);font-family:var(--mono)">${skyIcon(s.sky,s.pty)}</div>
-        <div class="fctemp">${s.temp.toFixed(0)}°</div>
-        <div class="fchour" style="${isNow?'color:var(--ac);font-weight:700':''}">${String(s.hour).padStart(2,'0')}시</div>
-      </div>`;
-  }).join('');
+    document.getElementById("resContent").textContent=data.content;
+    document.getElementById("resFooter").innerHTML=
+      "<span>모델: "+(data.model||"Groq llama-3.3-70b")+"</span>"+
+      "<span>"+new Date().toLocaleString("ko-KR",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"})+"</span>";
 
-  setH('alldayArea', `<div class="fcwrap"><div class="fcbars" style="padding-top:18px">${bars}</div></div>`);
+    document.getElementById("resultWrap").style.display="block";
+    setTimeout(function(){document.getElementById("resultWrap").scrollIntoView({behavior:"smooth",block:"start"});},100);
 
-  // ── 요약 메타 ──
-  const peakC  = {safe:'var(--lv-safe)',caution:'var(--lv-caution)',watch:'var(--lv-watch)',alert:'var(--lv-alert)'}[peak.lv];
-  const safeC  = {safe:'var(--lv-safe)',caution:'var(--lv-caution)',watch:'var(--lv-watch)',alert:'var(--lv-alert)'}[safest.lv];
-  const nowSlot = slots.find(s=>s.hour===nowH) || slots[0];
-
-  // 유형별 하루 최고 위험시간
-  const peakChem = slots.reduce((a,b)=>b.pChem>a.pChem?b:a,slots[0]);
-  const peakFall = slots.reduce((a,b)=>b.pFall>a.pFall?b:a,slots[0]);
-  const peakEnv  = slots.reduce((a,b)=>b.pEnv >a.pEnv ?b:a,slots[0]);
-
-  setH('alldayMeta', `
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-top:2px;">
-      <div style="background:var(--sur2);border:1px solid var(--bdr);padding:7px 8px;">
-        <div style="font-size:9px;color:var(--txd);margin-bottom:3px">&#9201; 현재 (${String(nowH).padStart(2,'0')}시)</div>
-        <div style="font-family:var(--mono);font-size:13px;font-weight:700;color:${{safe:'var(--lv-safe)',caution:'var(--lv-caution)',watch:'var(--lv-watch)',alert:'var(--lv-alert)'}[nowSlot?.lv||'safe']}">${LVL_KO[nowSlot?.lv||'safe']}</div>
-        <div style="font-size:9px;color:var(--txd);margin-top:2px">${nowSlot?.temp.toFixed(1)||'?'}°C · ${nowSlot?.wind.toFixed(1)||'?'}m/s</div>
-      </div>
-      <div style="background:var(--sur2);border:1px solid var(--bdr);padding:7px 8px;">
-        <div style="font-size:9px;color:var(--txd);margin-bottom:3px">&#128308; 최고 위험</div>
-        <div style="font-family:var(--mono);font-size:13px;font-weight:700;color:${peakC}">${String(peak.hour).padStart(2,'0')}시 ${LVL_KO[peak.lv]}</div>
-        <div style="font-size:9px;color:var(--txd);margin-top:2px">${peak.temp.toFixed(1)}°C · ${peak.wind.toFixed(1)}m/s</div>
-      </div>
-      <div style="background:var(--sur2);border:1px solid var(--bdr);padding:7px 8px;">
-        <div style="font-size:9px;color:var(--txd);margin-bottom:3px">&#128994; 가장 안전</div>
-        <div style="font-family:var(--mono);font-size:13px;font-weight:700;color:${safeC}">${String(safest.hour).padStart(2,'0')}시 ${LVL_KO[safest.lv]}</div>
-        <div style="font-size:9px;color:var(--txd);margin-top:2px">${safest.temp.toFixed(1)}°C · ${safest.wind.toFixed(1)}m/s</div>
-      </div>
-      <div style="background:var(--sur2);border:1px solid var(--bdr);padding:7px 8px;">
-        <div style="font-size:9px;color:var(--txd);margin-bottom:3px">&#9203; 유형별 최고위험</div>
-        <div style="font-size:9px;color:var(--txd);line-height:1.8">
-          &#128308; ${String(peakChem.hour).padStart(2,'0')}시
-          &nbsp;&#128993; ${String(peakFall.hour).padStart(2,'0')}시
-          &nbsp;&#128309; ${String(peakEnv.hour).padStart(2,'0')}시
-        </div>
-      </div>
-    </div>`);
-
-  setT('allday-src', `기상청 단기예보 · ${slots.length}개 시간대`);
-}
-
-// ── 가이드 ──
-const GUIDES = {
-  safe:   { cls:'safe',    items:['정기 순찰 유지','배관&#183;플랜지 외관 이상 여부 확인','기상 변화 모니터링'] },
-  caution:{ cls:'caution', items:['풍속 추이 집중 감시 (3m/s 이하 즉시 보고)','배관 주요 플랜지 가스 농도 확인 시작','고소 작업자 열피로 징후 사전 점검','PM2.5 상승 시 RTO 차압 사전 확인'] },
-  watch:  { cls:'watch',   items:['&#128308; 가스 감지기 경보 수준 하향 조정 검토','&#128308; 플랜지 수동 가스 농도 측정 실시','&#128993; 고소 작업 2인 1조 필수 확인','&#128993; 30분마다 작업자 열피로 상태 점검','&#128309; RTO 차압 계측기 현재값 기록','비상 연락 체계 점검'] },
-  alert:  { cls:'alert',   items:['&#128308; 해당 구역 용접&#183;불꽃 작업 즉시 중단','&#128308; 안전밸브&#183;압력계 전수 긴급 점검','&#128308; 환기팬 최대 출력 가동','&#128993; 위험 구역 고소 작업 전면 중단','&#128309; RTO 비상 정지 프로세스 준비','&#9888; 비상 대응 계획 발동 검토'] }
-};
-function renderGuide(lvl) {
-  const g = GUIDES[lvl];
-  const c = {safe:'var(--lv-safe)',caution:'var(--lv-caution)',watch:'var(--lv-watch)',alert:'var(--lv-alert)'}[lvl];
-  setH('guideContent',`
-    <div class="gtitle ${g.cls}">${LVL_KO[lvl]} 단계</div>
-    <div class="guide-items">
-      ${g.items.map(i=>`<div class="gi">${i}</div>`).join('')}
-    </div>`);
-}
-
-// ── 사례 카드 조건부 ──
-function buildCases({ pChem, pFall, pEnv }) {
-  const T=D.temp??20, W=D.wind??5, DT=D.dt24??1, R=D.rain??0, P=D.pm25??20;
-  const chemOn = pChem >= 0.30;
-  const fallOn = pFall >= 0.30;
-  const envOn  = pEnv  >= 0.30;
-
-  document.getElementById('cc-chem').classList.toggle('show', chemOn);
-  document.getElementById('cc-fall').classList.toggle('show', fallOn);
-  document.getElementById('cc-env').classList.toggle('show', envOn);
-  document.getElementById('noCase').style.display = (chemOn||fallOn||envOn)?'none':'block';
-
-  if (chemOn) {
-    const lv=levelOf(pChem);
-    setH('cc-lv-chem',`<span class="casec-lvb ${lv==='alert'?'alert':'watch'}">${LVL_KO[lv]}</span>`);
-    setT('cc-trig-chem',`저풍속 ${W.toFixed(1)}m/s · ΔT ${DT.toFixed(1)}°C 감지`);
-  }
-  if (fallOn) {
-    const lv=levelOf(pFall);
-    setH('cc-lv-fall',`<span class="casec-lvb ${lv==='alert'?'alert':'watch'}">${LVL_KO[lv]}</span>`);
-    setT('cc-trig-fall',`기온 ${T.toFixed(1)}°C · 강수 ${R.toFixed(1)}mm 감지`);
-  }
-  if (envOn) {
-    const lv=levelOf(pEnv);
-    setH('cc-lv-env',`<span class="casec-lvb ${lv==='alert'?'alert':'watch'}">${LVL_KO[lv]}</span>`);
-    setT('cc-trig-env',`PM2.5 ${P!==null&&!isNaN(P)?P.toFixed(0):'?'}μg/m³ 감지`);
+  } catch(e) {
+    alert("분석 오류: "+e.message);
+  } finally {
+    btn.disabled=false; btn.innerHTML="AI 분석 실행";
+    step.classList.remove("show");
   }
 }
 
-// ══════════════════════════════════════════
-//  DOM 헬퍼
-// ══════════════════════════════════════════
-function setT(id,v){const e=document.getElementById(id);if(e)e.textContent=v;}
-function setH(id,v){const e=document.getElementById(id);if(e)e.innerHTML=v;}
-function setWv(id,val,unit,lvl){
-  const e=document.getElementById(id); if(!e) return;
-  if(val===null||val===undefined||(typeof val==='number'&&isNaN(val))){e.innerHTML='<span class="wv" style="color:var(--txd)">-</span>';return;}
-  const cls=lvl==='w'?' w':lvl==='r'?' r':'';
-  e.innerHTML=`<span class="wv${cls}">${val}</span><span class="wu">${unit}</span>`;
+function setDot(s,m){document.getElementById("dot").className="dot "+s;document.getElementById("gasMsg").textContent=m;}
+function showErr(h){var e=document.getElementById("errBox");e.innerHTML=h;e.classList.add("show");}
+function copyResult(){
+  if(!lastResult)return;
+  navigator.clipboard.writeText(lastResult.content)
+    .then(function(){alert("복사되었습니다.");})
+    .catch(function(){alert("텍스트를 직접 선택해 복사하세요.");});
 }
-function stH(v,t,dir='o'){
-  const bad=dir==='o'?v>=t:v<=t;
-  return bad?'<span class="twn">⚠ 초과</span>':'<span class="tok">✓ 정상</span>';
-}
-function lvlSpan(lv){
-  const c={safe:'tok',caution:'',watch:'twn',alert:'tdg'}[lv];
-  const col={safe:'var(--lv-safe)',caution:'var(--lv-caution)',watch:'var(--lv-watch)',alert:'var(--lv-alert)'}[lv];
-  return `<span style="color:${col}">${LVL_KO[lv]}</span>`;
-}
-function setSrc(key,state,label){
-  const d=document.getElementById('dot-'+key);
-  const s=document.getElementById('src-'+key);
-  if(d){d.className='ds-dot '+state;}
-  if(s){s.textContent=label;}
-}
-function setSrcAll(state,label){['rt','fc','mid','air'].forEach(k=>setSrc(k,state,label));}
-
-// ── 모달 ──
-function openModal(id){const e=document.getElementById('modal-'+id);if(e)e.classList.add('open');}
-function closeModal(id){const e=document.getElementById('modal-'+id);if(e)e.classList.remove('open');}
-document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.overlay.open').forEach(m=>m.classList.remove('open'));});
-
-// ── 시계 ──
-setInterval(()=>setT('clock',new Date().toLocaleTimeString('ko-KR',{hour12:false})),1000);
-setT('clock',new Date().toLocaleTimeString('ko-KR',{hour12:false}));
-
-// ── 초기 실행 ──
-loadAll();
-setInterval(loadAll, 10*60*1000); // 10분마다 재로드
 </script>
 </body>
 </html>
