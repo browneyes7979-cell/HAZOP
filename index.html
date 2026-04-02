@@ -6,246 +6,237 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>여수 산단 환경안전 법령 분석 시스템</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap');
-        body { font-family: 'Pretendard', sans-serif; }
-        .loading-shimmer {
-            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-            background-size: 200% 100%;
-            animation: shimmer 1.5s infinite;
-        }
-        @keyframes shimmer {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700;900&display=swap');
+        body { font-family: 'Pretendard', sans-serif; letter-spacing: -0.025em; }
+        .animate-slide-up { animation: slideUp 0.4s ease-out forwards; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen pb-12">
+<body class="bg-slate-50 min-h-screen pb-20">
     <!-- Header -->
-    <header class="bg-blue-900 text-white py-6 shadow-md mb-8">
-        <div class="container mx-auto px-4">
-            <h1 class="text-2xl font-bold flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
-                여수 산단 환경안전 법령 분석 시스템
-            </h1>
-            <p class="text-blue-200 text-sm mt-1">법제처 실시간 API 기반 신구법 대조 및 AI 실무 액션 가이드</p>
+    <header class="bg-[#0f172a] text-white py-10 shadow-2xl mb-8 relative overflow-hidden">
+        <div class="container mx-auto px-4 text-center relative z-10">
+            <div class="inline-flex items-center justify-center p-3 bg-blue-600 rounded-2xl mb-4 shadow-lg shadow-blue-500/30">
+                <i data-lucide="shield-check" class="w-8 h-8"></i>
+            </div>
+            <h1 class="text-3xl md:text-4xl font-black tracking-tighter">여수 산단 환경안전 법령 분석</h1>
+            <p class="text-slate-400 mt-2 font-medium">법제처 실시간 API 기반 신구법 대조 및 실무 대응 가이드</p>
         </div>
+        <div class="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl -mr-32 -mt-32"></div>
     </header>
 
-    <main class="container mx-auto px-4 max-w-5xl">
+    <main class="container mx-auto px-4 max-w-4xl">
         <!-- Search Section -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6">
+        <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-200 p-8 mb-8">
             <div class="flex flex-col md:flex-row gap-4">
-                <div class="flex-1">
-                    <label class="block text-sm font-semibold text-slate-700 mb-2">법령명 입력</label>
-                    <input type="text" id="lawInput" placeholder="예: 대기환경보전법, 물환경보전법" 
-                           class="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition">
+                <div class="flex-1 relative">
+                    <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5"></i>
+                    <input type="text" id="lawInput" placeholder="법령명 입력 (예: 대기환경보전법)" 
+                           class="w-full pl-12 pr-4 py-4 rounded-2xl bg-slate-100 border-2 border-transparent focus:border-blue-500 focus:bg-white outline-none transition-all font-bold text-slate-800">
                 </div>
-                <div class="w-full md:w-48">
-                    <label class="block text-sm font-semibold text-slate-700 mb-2">구분</label>
-                    <select id="lawType" class="w-full border border-slate-300 p-3 rounded-xl bg-slate-50 outline-none">
+                <div class="w-full md:w-40">
+                    <select id="lawType" class="w-full h-full px-4 py-4 rounded-2xl bg-slate-100 border-2 border-transparent font-bold text-slate-700 cursor-pointer appearance-none outline-none focus:border-blue-500">
                         <option value="law">법률</option>
                         <option value="decree">시행령</option>
                         <option value="rule">시행규칙</option>
                     </select>
                 </div>
-                <div class="flex items-end">
-                    <button onclick="loadLawHistory()" id="searchBtn" 
-                            class="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl transition shadow-lg shadow-blue-200">
-                        연혁 조회
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- History Select Section (Hidden by default) -->
-        <div id="historyContainer" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6 animate-fade-in">
-            <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-                <span class="w-1 h-6 bg-blue-600 rounded-full"></span>
-                시행일 선택
-            </h2>
-            <div class="flex flex-col md:flex-row gap-4 items-center">
-                <select id="dateSelect" class="flex-1 border border-slate-300 p-3 rounded-xl bg-white outline-none focus:ring-2 focus:ring-blue-500"></select>
-                <button onclick="startAnalysis()" id="analyzeBtn"
-                        class="w-full md:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-10 rounded-xl transition shadow-lg shadow-emerald-100">
-                    AI 분석 시작
+                <button onclick="loadHistory()" id="searchBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-black py-4 px-8 rounded-2xl transition-all shadow-lg shadow-blue-200 flex items-center justify-center gap-2 group">
+                    조회하기
+                    <i data-lucide="arrow-right" class="w-5 h-5 group-hover:translate-x-1 transition-transform"></i>
                 </button>
             </div>
-            <p class="text-xs text-slate-400 mt-3">* 법제처 lsHistory API를 통해 확보된 실시간 연혁 정보입니다.</p>
         </div>
 
-        <!-- Loading Indicator -->
-        <div id="loader" class="hidden space-y-4 py-12">
-            <div class="flex justify-center">
-                <div class="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-600"></div>
+        <!-- Loading -->
+        <div id="loader" class="hidden py-16 text-center animate-pulse">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-50 border-4 border-blue-600 border-t-transparent animate-spin mb-4"></div>
+            <p class="text-slate-600 font-black text-lg">데이터 엔진 가동 중...</p>
+        </div>
+
+        <!-- History List (Original Icon UI) -->
+        <div id="historySection" class="hidden space-y-4 mb-10">
+            <div class="flex items-center justify-between px-2 mb-4">
+                <h2 class="text-xl font-black text-slate-800 flex items-center gap-2">
+                    <i data-lucide="calendar-clock" class="text-blue-600 w-6 h-6"></i>
+                    시행 연혁 리스트
+                </h2>
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Select to Analyze</span>
             </div>
-            <p class="text-center text-slate-600 font-medium">법령 원문을 파싱하여 AI가 분석 중입니다...</p>
+            <div id="historyList" class="grid gap-3">
+                <!-- Rows injected by JS -->
+            </div>
         </div>
 
-        <!-- Result Section -->
-        <div id="resultView" class="hidden space-y-6">
-            <!-- Summary Card -->
-            <div id="summaryCard" class="bg-blue-50 border border-blue-100 rounded-2xl p-6"></div>
-            
+        <!-- Analysis Result -->
+        <div id="resultArea" class="hidden space-y-6 animate-slide-up">
+            <!-- Summary -->
+            <div class="bg-slate-900 text-white rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden">
+                <div class="relative z-10">
+                    <div class="inline-block bg-blue-600 text-[10px] font-black px-2 py-1 rounded mb-4 uppercase tracking-widest">AI Expert Insight</div>
+                    <h3 id="resTitle" class="text-3xl font-black mb-2">분석 완료</h3>
+                    <p id="resSub" class="text-slate-400 font-medium"></p>
+                </div>
+                <i data-lucide="cpu" class="absolute right-[-20px] bottom-[-20px] w-48 h-48 text-slate-800 opacity-30"></i>
+            </div>
+
+            <!-- Content Cards -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Change Items -->
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div class="bg-amber-50 px-6 py-4 border-b border-amber-100">
-                        <h3 class="font-bold text-amber-800 flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
-                            </svg>
-                            주요 강화/변경 사항
-                        </h3>
+                <!-- Changes -->
+                <div class="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="p-3 bg-amber-50 text-amber-600 rounded-2xl">
+                            <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+                        </div>
+                        <h4 class="text-xl font-black text-slate-800">주요 변경 사항</h4>
                     </div>
-                    <div id="changeList" class="p-6 text-slate-700 text-sm leading-relaxed space-y-3"></div>
+                    <div id="changes" class="space-y-4"></div>
                 </div>
 
-                <!-- Action Items -->
-                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div class="bg-emerald-50 px-6 py-4 border-b border-emerald-100">
-                        <h3 class="font-bold text-emerald-800 flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
-                            </svg>
-                            현장 대응 Action Item
-                        </h3>
+                <!-- Actions -->
+                <div class="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="p-3 bg-emerald-50 text-emerald-600 rounded-2xl">
+                            <i data-lucide="check-circle" class="w-6 h-6"></i>
+                        </div>
+                        <h4 class="text-xl font-black text-slate-800">현장 조치 사항</h4>
                     </div>
-                    <div id="actionList" class="p-6 text-slate-700 text-sm leading-relaxed space-y-3"></div>
+                    <div id="actions" class="space-y-4"></div>
                 </div>
             </div>
         </div>
     </main>
 
     <script>
-        // 새로운 GAS 배포 URL
-        const ENDPOINT = "https://script.google.com/macros/s/AKfycbwLNP7xvtj-ZmEV7MZ8iCaLJa5H97uT9GXDXo4o5nwwbn5BAjRCVF1BHJ-0l62biKqGPA/exec";
+        // 사용자님이 제공해주신 최신 배포 URL
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbwJuKPfTavcIr_aTVl57ZaS-KcrzrPzlJQdagW-fFQW59_Qf-BJsMsL5lNqHhl38Af7Fg/exec";
 
-        // JSONP 호출 함수
-        function fetchGAS(params) {
-            return new Promise((resolve, reject) => {
-                const callbackName = 'jsonp_' + Math.round(100000 * Math.random());
-                const script = document.createElement('script');
-                params.callback = callbackName;
+        // 아이콘 초기화
+        lucide.createIcons();
+
+        // 1. 연혁 로드
+        async function loadHistory() {
+            const name = document.getElementById('lawInput').value.trim();
+            const type = document.getElementById('lawType').value;
+            if(!name) return alert("분석할 법령명을 입력해 주세요.");
+
+            toggleLoading(true);
+            try {
+                const res = await callGAS({ action: 'dates', lawName: name, lawType: type });
+                if(res.error) throw new Error(res.error);
+
+                const list = document.getElementById('historyList');
+                list.innerHTML = "";
+
+                res.dates.forEach((date, idx) => {
+                    const card = document.createElement('div');
+                    card.className = "group bg-white p-6 rounded-[1.5rem] border border-slate-200 hover:border-blue-500 hover:shadow-xl hover:shadow-blue-500/10 transition-all cursor-pointer flex justify-between items-center animate-slide-up";
+                    card.style.animationDelay = `${idx * 0.05}s`;
+                    card.onclick = () => runAnalysis(date, res.mstMap[date], res.dates);
+
+                    card.innerHTML = `
+                        <div class="flex items-center gap-5">
+                            <div class="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center group-hover:bg-blue-600 transition-colors">
+                                <i data-lucide="calendar" class="w-6 h-6 text-slate-400 group-hover:text-white transition-colors"></i>
+                            </div>
+                            <div>
+                                <p class="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-0.5">${idx === 0 ? 'Current Enforcement' : 'History Record'}</p>
+                                <h3 class="text-lg font-black text-slate-800">${formatDate(date)} 시행</h3>
+                            </div>
+                        </div>
+                        <div class="p-3 rounded-full bg-slate-50 text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all transform group-hover:translate-x-1">
+                            <i data-lucide="chevron-right" class="w-6 h-6"></i>
+                        </div>
+                    `;
+                    list.appendChild(card);
+                });
+
+                document.getElementById('historySection').classList.remove('hidden');
+                document.getElementById('resultArea').classList.add('hidden');
+                lucide.createIcons();
+                window.scrollTo({ top: document.getElementById('historySection').offsetTop - 20, behavior: 'smooth' });
+            } catch(e) {
+                alert("오류가 발생했습니다: " + e.message);
+            } finally {
+                toggleLoading(false);
+            }
+        }
+
+        // 2. AI 분석 실행
+        async function runAnalysis(date, mstId, allDates) {
+            toggleLoading(true);
+            try {
+                const res = await callGAS({
+                    action: 'analyze',
+                    id: mstId,
+                    date: date,
+                    allDates: JSON.stringify(allDates)
+                });
+                renderResult(res);
+            } catch(e) {
+                alert("분석 엔진 오류: " + e.message);
+            } finally {
+                toggleLoading(false);
+            }
+        }
+
+        // 3. 결과 렌더링
+        function renderResult(res) {
+            const data = res.analysis.analysis || res.analysis;
+            document.getElementById('resTitle').textContent = `${formatDate(res.dateInfo.current)} 시행분 정밀 분석`;
+            document.getElementById('resSub').textContent = res.dateInfo.previous 
+                ? `신구법 대조군: ${formatDate(res.dateInfo.previous)} 시행령 기준` 
+                : "비교 가능한 이전 연혁이 없는 최초 제정/데이터입니다.";
+
+            const listToHtml = (obj, keyword) => {
+                const key = Object.keys(obj).find(k => k.includes(keyword)) || "";
+                const items = Array.isArray(obj[key]) ? obj[key] : [obj[key]];
+                if(!items[0]) return "<p class='text-slate-400 text-sm italic'>해당하는 특이사항이 없습니다.</p>";
                 
-                const qs = Object.keys(params).map(key => `${key}=${encodeURIComponent(params[key])}`).join('&');
-                script.src = `${ENDPOINT}?${qs}`;
+                return items.map(item => `
+                    <div class="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors">
+                        <div class="mt-1.5 w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></div>
+                        <p class="text-slate-700 text-[13px] font-semibold leading-relaxed">${item}</p>
+                    </div>
+                `).join('');
+            };
 
-                window[callbackName] = (data) => {
-                    delete window[callbackName];
+            document.getElementById('changes').innerHTML = listToHtml(data, '강화') || listToHtml(data, '변경');
+            document.getElementById('actions').innerHTML = listToHtml(data, '조치') || listToHtml(data, 'Action');
+
+            document.getElementById('resultArea').classList.remove('hidden');
+            window.scrollTo({ top: document.getElementById('resultArea').offsetTop - 20, behavior: 'smooth' });
+        }
+
+        // 유틸리티: JSONP 호출
+        function callGAS(params) {
+            return new Promise((resolve, reject) => {
+                const cb = 'callback_' + Math.floor(Math.random() * 1000000);
+                const script = document.createElement('script');
+                params.callback = cb;
+                window[cb] = (data) => {
+                    delete window[cb];
                     document.body.removeChild(script);
-                    if (data.error) reject(data.error);
-                    else resolve(data);
+                    resolve(data);
                 };
-
-                script.onerror = () => reject("GAS 엔드포인트 연결 실패");
+                const qs = Object.keys(params).map(k => `${k}=${encodeURIComponent(params[k])}`).join('&');
+                script.src = `${GAS_URL}?${qs}`;
                 document.body.appendChild(script);
             });
         }
 
-        async function loadLawHistory() {
-            const lawName = document.getElementById('lawInput').value.trim();
-            const lawType = document.getElementById('lawType').value;
-            if (!lawName) return alert("법령명을 입력하세요.");
-
-            setLoading(true);
-            try {
-                const res = await fetchGAS({ action: 'dates', lawName, lawType });
-                
-                const select = document.getElementById('dateSelect');
-                select.innerHTML = '';
-                
-                res.dates.forEach(date => {
-                    const opt = document.createElement('option');
-                    opt.value = date;
-                    opt.dataset.id = res.mstMap[date];
-                    opt.textContent = `${date.substring(0,4)}년 ${date.substring(4,6)}월 ${date.substring(6,8)}일 시행분`;
-                    select.appendChild(opt);
-                });
-
-                window.allDates = JSON.stringify(res.dates);
-                document.getElementById('historyContainer').classList.remove('hidden');
-                document.getElementById('resultView').classList.add('hidden');
-            } catch (err) {
-                alert("오류: " + err);
-            } finally {
-                setLoading(false);
-            }
-        }
-
-        async function startAnalysis() {
-            const select = document.getElementById('dateSelect');
-            const opt = select.options[select.selectedIndex];
-            if (!opt) return;
-
-            setLoading(true);
-            try {
-                const res = await fetchGAS({
-                    action: 'analyze',
-                    id: opt.dataset.id,
-                    date: opt.value,
-                    allDates: window.allDates
-                });
-                renderResult(res);
-            } catch (err) {
-                alert("분석 중 오류 발생: " + err);
-            } finally {
-                setLoading(false);
-            }
-        }
-
-        function renderResult(res) {
-            const { analysis, dateInfo } = res;
-            const view = document.getElementById('resultView');
-            
-            // 요약 영역
-            document.getElementById('summaryCard').innerHTML = `
-                <div class="flex justify-between items-start">
-                    <div>
-                        <h2 class="text-xl font-bold text-blue-900">분석 결과: ${formatDate(dateInfo.current)} 시행분</h2>
-                        <p class="text-blue-700 text-sm mt-1">대조군: ${dateInfo.previous ? formatDate(dateInfo.previous) + ' 시행령' : '최초 제정 또는 이전 데이터 없음'}</p>
-                    </div>
-                    <span class="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase">AI Verified</span>
-                </div>
-            `;
-
-            // 강화사항 (분석 결과가 배열이 아닐 경우를 대비해 처리)
-            const listToHtml = (list) => {
-                if (!Array.isArray(list)) return `<li>${list}</li>`;
-                return list.map(item => `<li class="flex items-start gap-2"><span class="mt-1.5 w-1.5 h-1.5 bg-slate-400 rounded-full shrink-0"></span>${item}</li>`).join('');
-            };
-
-            // GAS의 prompt 설계에 따른 JSON 키 매핑 (강화사항, 조치사항 등)
-            // Code.gs의 prompt에 따라 '강화사항', '조치사항' 키로 올 것으로 예상되나, 
-            // AI 모델에 따라 키 이름이 변할 수 있으므로 유연하게 처리합니다.
-            const data = analysis.analysis || analysis; // 중첩 구조 대응
-            
-            // 키 찾기 유틸리티
-            const findKey = (obj, keywords) => {
-                const key = Object.keys(obj).find(k => keywords.some(kw => k.includes(kw)));
-                return obj[key] || [];
-            };
-
-            const changes = findKey(data, ['강화', '변경', '사항', '핵심']);
-            const actions = findKey(data, ['조치', '대응', '액션', 'Action']);
-
-            document.getElementById('changeList').innerHTML = `<ul class="space-y-3">${listToHtml(changes)}</ul>`;
-            document.getElementById('actionList').innerHTML = `<ul class="space-y-3">${listToHtml(actions)}</ul>`;
-
-            view.classList.remove('hidden');
-            view.scrollIntoView({ behavior: 'smooth' });
-        }
-
-        function setLoading(show) {
+        function toggleLoading(show) {
             document.getElementById('loader').classList.toggle('hidden', !show);
             document.getElementById('searchBtn').disabled = show;
-            if (document.getElementById('analyzeBtn')) document.getElementById('analyzeBtn').disabled = show;
         }
 
         function formatDate(d) {
-            if (!d || d.length < 8) return d;
+            if(!d || d.length < 8) return d;
             return `${d.substring(0,4)}년 ${d.substring(4,6)}월 ${d.substring(6,8)}일`;
         }
     </script>
