@@ -4,235 +4,237 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>여수 산단 환경안전 법령 분석 시스템</title>
+    <title>여수 산단 환경안전 법령 분석</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700;900&display=swap');
         body { font-family: 'Pretendard', sans-serif; letter-spacing: -0.025em; }
-        .animate-slide-up { animation: slideUp 0.4s ease-out forwards; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .dropdown-shadow { shadow-sm border border-slate-200 rounded-2xl bg-white focus:ring-2 focus:ring-blue-500 outline-none appearance-none cursor-pointer; }
+        .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .spinner { border-top-color: #2563eb; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen pb-20">
-    <!-- Header -->
-    <header class="bg-[#0f172a] text-white py-10 shadow-2xl mb-8 relative overflow-hidden">
-        <div class="container mx-auto px-4 text-center relative z-10">
-            <div class="inline-flex items-center justify-center p-3 bg-blue-600 rounded-2xl mb-4 shadow-lg shadow-blue-500/30">
+<body class="bg-slate-50 min-h-screen pb-24">
+
+    <!-- Header (2번 사진 스타일 복구) -->
+    <header class="bg-[#0f172a] text-white pt-16 pb-24 text-center relative overflow-hidden">
+        <div class="relative z-10 container mx-auto px-4">
+            <div class="inline-flex items-center justify-center w-14 h-14 bg-blue-600 rounded-2xl mb-6 shadow-xl shadow-blue-500/20">
                 <i data-lucide="shield-check" class="w-8 h-8"></i>
             </div>
-            <h1 class="text-3xl md:text-4xl font-black tracking-tighter">여수 산단 환경안전 법령 분석</h1>
-            <p class="text-slate-400 mt-2 font-medium">법제처 실시간 API 기반 신구법 대조 및 실무 대응 가이드</p>
+            <h1 class="text-3xl md:text-4xl font-black tracking-tight mb-3">여수 산단 환경안전 법령 분석</h1>
+            <p class="text-slate-400 font-medium">법제처 실시간 API 기반 신구법 대조 및 AI 실무 대응 가이드</p>
         </div>
-        <div class="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl -mr-32 -mt-32"></div>
+        <div class="absolute top-0 right-0 w-80 h-80 bg-blue-600/5 rounded-full blur-[100px] -mr-40 -mt-40"></div>
     </header>
 
-    <main class="container mx-auto px-4 max-w-4xl">
-        <!-- Search Section -->
-        <div class="bg-white rounded-[2.5rem] shadow-sm border border-slate-200 p-8 mb-8">
-            <div class="flex flex-col md:flex-row gap-4">
-                <div class="flex-1 relative">
-                    <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5"></i>
-                    <input type="text" id="lawInput" placeholder="법령명 입력 (예: 대기환경보전법)" 
-                           class="w-full pl-12 pr-4 py-4 rounded-2xl bg-slate-100 border-2 border-transparent focus:border-blue-500 focus:bg-white outline-none transition-all font-bold text-slate-800">
+    <main class="container mx-auto px-4 -mt-12 max-w-5xl relative z-20">
+        <!-- 메인 검색창 (드롭다운 기반) -->
+        <div class="bg-white rounded-[2.5rem] shadow-2xl p-8 md:p-10 border border-slate-100 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+                <!-- 법령명 선택 -->
+                <div class="md:col-span-5 relative group">
+                    <label class="block text-xs font-black text-slate-400 mb-2 ml-1 uppercase tracking-widest">Law Name</label>
+                    <div class="relative">
+                        <i data-lucide="book-open" class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300"></i>
+                        <select id="lawInput" class="w-full pl-12 pr-10 py-4 bg-slate-50 border-2 border-transparent rounded-2xl font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all appearance-none cursor-pointer">
+                            <option value="" disabled selected>법령 선택</option>
+                            <option value="대기환경보전법">대기환경보전법</option>
+                            <option value="물환경보전법">물환경보전법</option>
+                            <option value="화학물질관리법">화학물질관리법</option>
+                            <option value="산업안전보건법">산업안전보건법</option>
+                            <option value="폐기물관리법">폐기물관리법</option>
+                            <option value="토양환경보전법">토양환경보전법</option>
+                            <option value="위험물안전관리법">위험물안전관리법</option>
+                            <option value="고압가스 안전관리법">고압가스 안전관리법</option>
+                            <option value="환경오염시설의 통합관리에 관한 법률">통합환경관리법</option>
+                        </select>
+                        <i data-lucide="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none"></i>
+                    </div>
                 </div>
-                <div class="w-full md:w-40">
-                    <select id="lawType" class="w-full h-full px-4 py-4 rounded-2xl bg-slate-100 border-2 border-transparent font-bold text-slate-700 cursor-pointer appearance-none outline-none focus:border-blue-500">
-                        <option value="law">법률</option>
-                        <option value="decree">시행령</option>
-                        <option value="rule">시행규칙</option>
-                    </select>
+
+                <!-- 법령 구분 선택 -->
+                <div class="md:col-span-3 relative group">
+                    <label class="block text-xs font-black text-slate-400 mb-2 ml-1 uppercase tracking-widest">Category</label>
+                    <div class="relative">
+                        <select id="lawType" class="w-full px-5 py-4 bg-slate-50 border-2 border-transparent rounded-2xl font-bold text-slate-800 outline-none focus:border-blue-500 focus:bg-white transition-all appearance-none cursor-pointer text-center">
+                            <option value="law">법률</option>
+                            <option value="decree" selected>시행령</option>
+                            <option value="rule">시행규칙</option>
+                        </select>
+                        <i data-lucide="chevron-down" class="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"></i>
+                    </div>
                 </div>
-                <button onclick="loadHistory()" id="searchBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-black py-4 px-8 rounded-2xl transition-all shadow-lg shadow-blue-200 flex items-center justify-center gap-2 group">
-                    조회하기
-                    <i data-lucide="arrow-right" class="w-5 h-5 group-hover:translate-x-1 transition-transform"></i>
-                </button>
+
+                <!-- 조회 버튼 -->
+                <div class="md:col-span-4">
+                    <button onclick="loadHistory()" id="searchBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 px-8 rounded-2xl transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 group h-[60px]">
+                        <span>조회하기</span>
+                        <i data-lucide="arrow-right" class="w-5 h-5 group-hover:translate-x-1 transition-transform"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 시행일 선택 드롭다운 (조회 후 노출) -->
+            <div id="dateSelectionArea" class="hidden mt-8 pt-8 border-t border-slate-50 fade-in">
+                <div class="max-w-md mx-auto">
+                    <label class="block text-xs font-black text-blue-600 mb-2 text-center uppercase tracking-widest">Select Enforcement Date</label>
+                    <div class="relative">
+                        <select id="dateDropdown" class="w-full px-6 py-4 bg-blue-50 border-2 border-blue-100 rounded-2xl font-black text-blue-800 outline-none focus:border-blue-600 focus:bg-white transition-all appearance-none cursor-pointer text-center text-lg shadow-sm">
+                            <!-- Options injected by JS -->
+                        </select>
+                        <i data-lucide="calendar" class="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-blue-400 pointer-events-none"></i>
+                        <i data-lucide="chevron-down" class="absolute right-6 top-1/2 -translate-y-1/2 w-5 h-5 text-blue-400 pointer-events-none"></i>
+                    </div>
+                    <button onclick="runAnalysis()" id="analyzeBtn" class="w-full mt-4 bg-slate-900 text-white font-black py-4 rounded-2xl hover:bg-slate-800 transition-all shadow-xl">
+                        AI 정밀 분석 시작
+                    </button>
+                </div>
             </div>
         </div>
 
-        <!-- Loading -->
-        <div id="loader" class="hidden py-16 text-center animate-pulse">
-            <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-50 border-4 border-blue-600 border-t-transparent animate-spin mb-4"></div>
-            <p class="text-slate-600 font-black text-lg">데이터 엔진 가동 중...</p>
+        <!-- 로딩 표시 (2번 사진 스타일 복구) -->
+        <div id="loader" class="hidden py-24 text-center fade-in">
+            <div class="w-16 h-16 border-4 border-slate-200 spinner rounded-full mx-auto mb-6"></div>
+            <h3 class="text-xl font-black text-slate-800 mb-2">데이터 엔진 가동 중...</h3>
+            <p class="text-slate-400 font-medium">법제처 원문 데이터 및 신구법 변경점을 분석 중입니다.</p>
         </div>
 
-        <!-- History List (Original Icon UI) -->
-        <div id="historySection" class="hidden space-y-4 mb-10">
-            <div class="flex items-center justify-between px-2 mb-4">
-                <h2 class="text-xl font-black text-slate-800 flex items-center gap-2">
-                    <i data-lucide="calendar-clock" class="text-blue-600 w-6 h-6"></i>
-                    시행 연혁 리스트
-                </h2>
-                <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Select to Analyze</span>
-            </div>
-            <div id="historyList" class="grid gap-3">
-                <!-- Rows injected by JS -->
-            </div>
-        </div>
-
-        <!-- Analysis Result -->
-        <div id="resultArea" class="hidden space-y-6 animate-slide-up">
-            <!-- Summary -->
-            <div class="bg-slate-900 text-white rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden">
+        <!-- 분석 결과 영역 -->
+        <div id="resultArea" class="hidden fade-in space-y-8">
+            <div class="bg-slate-900 rounded-[2.5rem] p-10 text-white shadow-2xl relative overflow-hidden">
                 <div class="relative z-10">
-                    <div class="inline-block bg-blue-600 text-[10px] font-black px-2 py-1 rounded mb-4 uppercase tracking-widest">AI Expert Insight</div>
-                    <h3 id="resTitle" class="text-3xl font-black mb-2">분석 완료</h3>
-                    <p id="resSub" class="text-slate-400 font-medium"></p>
+                    <span class="inline-block bg-blue-600 text-[10px] font-black px-2 py-1 rounded mb-4 tracking-tighter uppercase italic">Analysis Report</span>
+                    <h2 id="resTitle" class="text-3xl font-black mb-3 italic tracking-tighter leading-tight"></h2>
+                    <p id="resSub" class="text-slate-400 font-medium text-lg"></p>
                 </div>
-                <i data-lucide="cpu" class="absolute right-[-20px] bottom-[-20px] w-48 h-48 text-slate-800 opacity-30"></i>
+                <i data-lucide="cpu" class="absolute right-[-40px] bottom-[-40px] w-80 h-80 text-white/5 pointer-events-none"></i>
             </div>
 
-            <!-- Content Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Changes -->
-                <div class="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                    <div class="flex items-center gap-3 mb-6">
-                        <div class="p-3 bg-amber-50 text-amber-600 rounded-2xl">
-                            <i data-lucide="alert-triangle" class="w-6 h-6"></i>
-                        </div>
-                        <h4 class="text-xl font-black text-slate-800">주요 변경 사항</h4>
-                    </div>
-                    <div id="changes" class="space-y-4"></div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm">
+                    <h3 class="text-amber-600 font-black mb-8 flex items-center gap-3 text-2xl tracking-tighter italic">
+                        <i data-lucide="alert-triangle"></i> 강화 및 변경점
+                    </h3>
+                    <div id="changeList" class="space-y-4"></div>
                 </div>
-
-                <!-- Actions -->
-                <div class="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-                    <div class="flex items-center gap-3 mb-6">
-                        <div class="p-3 bg-emerald-50 text-emerald-600 rounded-2xl">
-                            <i data-lucide="check-circle" class="w-6 h-6"></i>
-                        </div>
-                        <h4 class="text-xl font-black text-slate-800">현장 조치 사항</h4>
-                    </div>
-                    <div id="actions" class="space-y-4"></div>
+                <div class="bg-white rounded-[2.5rem] p-10 border border-slate-100 shadow-sm">
+                    <h3 class="text-emerald-600 font-black mb-8 flex items-center gap-3 text-2xl tracking-tighter italic">
+                        <i data-lucide="check-circle-2"></i> 실무 대응 Action
+                    </h3>
+                    <div id="actionList" class="space-y-4"></div>
                 </div>
             </div>
         </div>
     </main>
 
     <script>
-        // 사용자님이 제공해주신 최신 배포 URL
-        const GAS_URL = "https://script.google.com/macros/s/AKfycbwJuKPfTavcIr_aTVl57ZaS-KcrzrPzlJQdagW-fFQW59_Qf-BJsMsL5lNqHhl38Af7Fg/exec";
+        // 사용자 제공 GAS URL
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbz5KvHSCFhSqjsLGag7ICCoXLxR9NptawWlaLCI-CGfySh3DSj921jlF-5wuBJEPyQJ0A/exec";
+        let historyData = null;
 
-        // 아이콘 초기화
         lucide.createIcons();
 
-        // 1. 연혁 로드
+        // 1단계: 연혁 로드 (시행일 드롭다운 생성)
         async function loadHistory() {
-            const name = document.getElementById('lawInput').value.trim();
+            const name = document.getElementById('lawInput').value;
             const type = document.getElementById('lawType').value;
-            if(!name) return alert("분석할 법령명을 입력해 주세요.");
+            if(!name) return alert("법령명을 선택해 주세요.");
 
             toggleLoading(true);
             try {
                 const res = await callGAS({ action: 'dates', lawName: name, lawType: type });
                 if(res.error) throw new Error(res.error);
 
-                const list = document.getElementById('historyList');
-                list.innerHTML = "";
+                historyData = res;
+                const dropdown = document.getElementById('dateDropdown');
+                dropdown.innerHTML = "";
 
                 res.dates.forEach((date, idx) => {
-                    const card = document.createElement('div');
-                    card.className = "group bg-white p-6 rounded-[1.5rem] border border-slate-200 hover:border-blue-500 hover:shadow-xl hover:shadow-blue-500/10 transition-all cursor-pointer flex justify-between items-center animate-slide-up";
-                    card.style.animationDelay = `${idx * 0.05}s`;
-                    card.onclick = () => runAnalysis(date, res.mstMap[date], res.dates);
-
-                    card.innerHTML = `
-                        <div class="flex items-center gap-5">
-                            <div class="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center group-hover:bg-blue-600 transition-colors">
-                                <i data-lucide="calendar" class="w-6 h-6 text-slate-400 group-hover:text-white transition-colors"></i>
-                            </div>
-                            <div>
-                                <p class="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-0.5">${idx === 0 ? 'Current Enforcement' : 'History Record'}</p>
-                                <h3 class="text-lg font-black text-slate-800">${formatDate(date)} 시행</h3>
-                            </div>
-                        </div>
-                        <div class="p-3 rounded-full bg-slate-50 text-slate-400 group-hover:bg-blue-600 group-hover:text-white transition-all transform group-hover:translate-x-1">
-                            <i data-lucide="chevron-right" class="w-6 h-6"></i>
-                        </div>
-                    `;
-                    list.appendChild(card);
+                    const opt = document.createElement('option');
+                    opt.value = date;
+                    opt.textContent = `${formatDate(date)} 시행 ${idx === 0 ? '(최신)' : ''}`;
+                    dropdown.appendChild(opt);
                 });
 
-                document.getElementById('historySection').classList.remove('hidden');
+                document.getElementById('dateSelectionArea').classList.remove('hidden');
                 document.getElementById('resultArea').classList.add('hidden');
-                lucide.createIcons();
-                window.scrollTo({ top: document.getElementById('historySection').offsetTop - 20, behavior: 'smooth' });
+                window.scrollTo({ top: document.getElementById('dateSelectionArea').offsetTop - 100, behavior: 'smooth' });
             } catch(e) {
-                alert("오류가 발생했습니다: " + e.message);
+                alert("조회 실패: " + e.message);
             } finally {
                 toggleLoading(false);
             }
         }
 
-        // 2. AI 분석 실행
-        async function runAnalysis(date, mstId, allDates) {
+        // 2단계: 선택된 시행일로 AI 분석
+        async function runAnalysis() {
+            const date = document.getElementById('dateDropdown').value;
+            if(!date) return;
+
             toggleLoading(true);
             try {
                 const res = await callGAS({
                     action: 'analyze',
-                    id: mstId,
+                    id: historyData.mstMap[date],
                     date: date,
-                    allDates: JSON.stringify(allDates)
+                    allDates: JSON.stringify(historyData.dates)
                 });
                 renderResult(res);
             } catch(e) {
-                alert("분석 엔진 오류: " + e.message);
+                alert("분석 실패: " + e.message);
             } finally {
                 toggleLoading(false);
             }
         }
 
-        // 3. 결과 렌더링
         function renderResult(res) {
             const data = res.analysis.analysis || res.analysis;
-            document.getElementById('resTitle').textContent = `${formatDate(res.dateInfo.current)} 시행분 정밀 분석`;
-            document.getElementById('resSub').textContent = res.dateInfo.previous 
-                ? `신구법 대조군: ${formatDate(res.dateInfo.previous)} 시행령 기준` 
-                : "비교 가능한 이전 연혁이 없는 최초 제정/데이터입니다.";
+            document.getElementById('resTitle').innerText = `${formatDate(res.dateInfo.current)} 시행 정밀 분석`;
+            document.getElementById('resSub').innerText = res.dateInfo.previous 
+                ? `신구법 대조 기준: ${formatDate(res.dateInfo.previous)} 개정령` 
+                : "비교 가능한 이전 연혁이 없습니다.";
 
-            const listToHtml = (obj, keyword) => {
+            const buildList = (obj, keyword) => {
                 const key = Object.keys(obj).find(k => k.includes(keyword)) || "";
                 const items = Array.isArray(obj[key]) ? obj[key] : [obj[key]];
-                if(!items[0]) return "<p class='text-slate-400 text-sm italic'>해당하는 특이사항이 없습니다.</p>";
+                if(!items[0]) return "<p class='text-slate-400 italic'>분석 결과가 없습니다.</p>";
                 
-                return items.map(item => `
-                    <div class="flex items-start gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors">
-                        <div class="mt-1.5 w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></div>
-                        <p class="text-slate-700 text-[13px] font-semibold leading-relaxed">${item}</p>
+                return items.map(text => `
+                    <div class="flex gap-4 p-5 bg-slate-50 rounded-3xl border border-slate-100 hover:border-blue-200 transition-all group">
+                        <div class="mt-1.5 w-2 h-2 rounded-full bg-blue-500 shrink-0 group-hover:scale-125 transition-transform"></div>
+                        <p class="text-slate-700 font-bold leading-relaxed text-[15px]">${text}</p>
                     </div>
                 `).join('');
             };
 
-            document.getElementById('changes').innerHTML = listToHtml(data, '강화') || listToHtml(data, '변경');
-            document.getElementById('actions').innerHTML = listToHtml(data, '조치') || listToHtml(data, 'Action');
+            document.getElementById('changeList').innerHTML = buildList(data, '강화') || buildList(data, '변경');
+            document.getElementById('actionList').innerHTML = buildList(data, '조치') || buildList(data, 'Action');
 
             document.getElementById('resultArea').classList.remove('hidden');
-            window.scrollTo({ top: document.getElementById('resultArea').offsetTop - 20, behavior: 'smooth' });
+            window.scrollTo({ top: document.getElementById('resultArea').offsetTop - 50, behavior: 'smooth' });
         }
 
-        // 유틸리티: JSONP 호출
+        // JSONP 통신
         function callGAS(params) {
             return new Promise((resolve, reject) => {
-                const cb = 'callback_' + Math.floor(Math.random() * 1000000);
+                const cb = 'cb' + Date.now();
                 const script = document.createElement('script');
                 params.callback = cb;
-                window[cb] = (data) => {
-                    delete window[cb];
-                    document.body.removeChild(script);
-                    resolve(data);
-                };
+                window[cb] = (d) => { delete window[cb]; document.body.removeChild(script); resolve(d); };
                 const qs = Object.keys(params).map(k => `${k}=${encodeURIComponent(params[k])}`).join('&');
                 script.src = `${GAS_URL}?${qs}`;
+                setTimeout(() => { if(window[cb]) { delete window[cb]; reject(new Error("시간 초과")); } }, 30000);
                 document.body.appendChild(script);
             });
         }
 
-        function toggleLoading(show) {
-            document.getElementById('loader').classList.toggle('hidden', !show);
-            document.getElementById('searchBtn').disabled = show;
+        function toggleLoading(s) {
+            document.getElementById('loader').classList.toggle('hidden', !s);
+            document.getElementById('searchBtn').disabled = s;
         }
 
         function formatDate(d) {
