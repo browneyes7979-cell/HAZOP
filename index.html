@@ -1,513 +1,255 @@
+```html
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>환경법령 개정 대응 대시보드</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
-<style>
-:root{--p:#2563eb;--ps:#1d4ed8;--bg:#f0f4f8;--card:#fff;--bd:#dde3ea;--tx:#0f172a;--mu:#64748b;--red:#dc2626;--ora:#d97706;--grn:#16a34a;--pur:#7c3aed}
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--tx);min-height:100vh}
-
-/* 상단 헤더 바 */
-.topbar{background:linear-gradient(135deg,#0f172a,#1e3a5f);color:#fff;padding:16px 20px;display:flex;align-items:center;gap:12px}
-.topbar .logo{font-size:18px;font-weight:900;letter-spacing:-0.5px}
-.topbar .sub{font-size:11px;color:#94a3b8;margin-left:auto}
-
-.wrap{max-width:800px;margin:0 auto;padding:20px 16px 60px}
-
-/* 카드 */
-.card{background:var(--card);border-radius:18px;padding:20px;margin-bottom:14px;box-shadow:0 1px 8px rgba(0,0,0,0.07);border:1px solid var(--bd)}
-.lbl{font-size:10px;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:var(--p);margin-bottom:10px;display:flex;align-items:center;gap:6px}
-.lbl::before{content:'';width:3px;height:14px;background:var(--p);border-radius:2px;display:inline-block}
-
-/* 드롭다운 */
-.sw{position:relative}
-.sw::after{content:'';position:absolute;right:16px;top:50%;transform:translateY(-50%);border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid #94a3b8;pointer-events:none}
-select{width:100%;padding:13px 42px 13px 16px;border:1.5px solid var(--bd);border-radius:12px;background:#fff;font-family:'Noto Sans KR',sans-serif;font-size:15px;font-weight:700;color:var(--tx);outline:none;appearance:none;-webkit-appearance:none;cursor:pointer;transition:border-color .2s,box-shadow .2s}
-select:hover,select:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
-select:disabled{opacity:.4;cursor:not-allowed;background:#f8fafc}
-
-/* 상태 */
-.srow{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--mu);margin-bottom:10px}
-.dot{width:8px;height:8px;border-radius:50%;background:#cbd5e1;flex-shrink:0;transition:all .3s}
-.dot.ok{background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.2)}
-.dot.err{background:var(--red);box-shadow:0 0 0 3px rgba(220,38,38,.2)}
-.dot.ing{background:#f59e0b;animation:pulse 1.5s infinite}
-@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(.9)}}
-
-/* 실행 버튼 */
-.run-btn{width:100%;height:58px;border:none;border-radius:14px;background:linear-gradient(135deg,#1e40af,#2563eb);color:#fff;font-family:'Noto Sans KR',sans-serif;font-size:15px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:all .2s;margin-bottom:14px;box-shadow:0 4px 16px rgba(37,99,235,.3)}
-.run-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 6px 24px rgba(37,99,235,.4)}
-.run-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
-.spin{width:18px;height:18px;border:3px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
-@keyframes spin{to{transform:rotate(360deg)}}
-
-/* 메시지 */
-.msg{border-radius:10px;padding:11px 14px;font-size:13px;line-height:1.6;margin-top:10px;display:none}
-.msg.show{display:block}
-.msg.err{background:#fef2f2;border:1px solid #fecaca;color:#b91c1c}
-.msg.warn{background:#fffbeb;border:1px solid #fde68a;color:#92400e}
-.msg.ok{background:#f0fdf4;border:1px solid #bbf7d0;color:#14532d}
-.step{background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:11px 14px;font-size:13px;font-weight:700;color:#1d4ed8;margin-bottom:14px;display:none}
-.step.show{display:block;animation:fadein .3s}
-@keyframes fadein{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
-
-/* ── 결과 대시보드 ── */
-.dashboard{background:var(--card);border-radius:18px;border:1px solid var(--bd);overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.08)}
-
-/* 대시보드 헤더 */
-.db-head{background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 100%);padding:22px;color:#fff}
-.db-head h2{font-size:20px;font-weight:900;margin-bottom:10px}
-.db-tags{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
-.tag{padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.3px}
-.t-date{background:rgba(59,130,246,.3);color:#93c5fd}
-.t-prev{background:rgba(168,85,247,.3);color:#d8b4fe}
-.t-src{background:rgba(34,197,94,.3);color:#86efac}
-.t-nosrc{background:rgba(251,191,36,.3);color:#fde68a}
-.t-tok{background:rgba(99,102,241,.3);color:#a5b4fc}
-
-/* 비교 배너 */
-.cmp-banner{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.cmp-banner .prev-lbl{font-size:11px;color:#94a3b8;font-weight:600}
-.cmp-banner .prev-val{font-size:13px;font-weight:900;color:#fbbf24}
-.cmp-banner .arrow{font-size:16px;color:#60a5fa}
-.cmp-banner .cur-val{font-size:13px;font-weight:900;color:#34d399}
-
-/* 액션 바 */
-.db-actions{display:flex;gap:8px;padding:14px 20px;background:#f8fafc;border-bottom:1px solid var(--bd)}
-.act-btn{padding:8px 14px;border:1.5px solid var(--bd);border-radius:8px;background:#fff;font-family:'Noto Sans KR',sans-serif;font-size:12px;font-weight:700;color:var(--mu);cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:5px}
-.act-btn:hover{border-color:var(--p);color:var(--p)}
-.act-btn.print:hover{border-color:var(--grn);color:var(--grn)}
-
-/* 섹션 */
-.sec{border-bottom:1px solid #f1f5f9;padding:0}
-.sec:last-child{border-bottom:none}
-.sec-hd{display:flex;align-items:center;gap:10px;padding:16px 20px;cursor:pointer;transition:background .15s;user-select:none}
-.sec-hd:hover{background:#f8fafc}
-.sec-num{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;flex-shrink:0;color:#fff}
-.n1{background:#dc2626}.n2{background:#d97706}.n3{background:#2563eb}.n4{background:#7c3aed}.n5{background:#0891b2}.n6{background:#16a34a}
-.sec-title{font-size:14px;font-weight:900;flex:1}
-.sec-arrow{font-size:14px;color:#94a3b8;transition:transform .2s}
-.sec-arrow.open{transform:rotate(180deg)}
-.sec-body{padding:0 20px 18px;display:none}
-.sec-body.open{display:block}
-
-/* 테이블 */
-.tbl{width:100%;border-collapse:collapse;font-size:13px;margin:8px 0}
-.tbl th{background:#f1f5f9;padding:8px 12px;text-align:left;font-weight:700;font-size:12px;color:var(--mu);border-bottom:2px solid var(--bd)}
-.tbl td{padding:9px 12px;border-bottom:1px solid #f1f5f9;vertical-align:top;line-height:1.6}
-.tbl tr:last-child td{border-bottom:none}
-.tbl tr:hover td{background:#f8fafc}
-.badge-hi{background:#fef2f2;color:#dc2626;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700}
-.badge-mid{background:#fffbeb;color:#d97706;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700}
-.badge-lo{background:#f0fdf4;color:#16a34a;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700}
-
-/* 조항 카드 */
-.art-card{background:#f8fafc;border:1px solid var(--bd);border-radius:10px;padding:14px;margin-bottom:10px}
-.art-card h4{font-size:13px;font-weight:900;color:var(--p);margin-bottom:10px}
-.diff-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
-.diff-old{background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px;font-size:13px;line-height:1.6}
-.diff-new{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px;font-size:13px;line-height:1.6}
-.diff-label{font-size:10px;font-weight:900;letter-spacing:1px;margin-bottom:4px}
-.diff-old .diff-label{color:#dc2626}
-.diff-new .diff-label{color:#16a34a}
-.diff-reason{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px;font-size:13px;line-height:1.6}
-.diff-reason .diff-label{color:#2563eb}
-@media(max-width:500px){.diff-row{grid-template-columns:1fr}}
-
-/* 설비 카드 */
-.eq-card{border:1px solid var(--bd);border-radius:10px;margin-bottom:10px;overflow:hidden}
-.eq-head{background:#1e293b;color:#fff;padding:10px 14px;font-size:13px;font-weight:900;display:flex;align-items:center;gap:8px}
-.eq-body{padding:12px 14px}
-.eq-row{display:flex;gap:8px;margin-bottom:6px;font-size:13px;align-items:baseline}
-.eq-key{font-weight:700;color:var(--mu);flex-shrink:0;min-width:50px}
-.eq-val{line-height:1.6;flex:1}
-.urgent{color:#dc2626;font-weight:700}
-
-/* 체크리스트 */
-.chk-item{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid #f1f5f9;align-items:flex-start;font-size:14px}
-.chk-item:last-child{border-bottom:none}
-.chk-box{width:20px;height:20px;border:2px solid var(--bd);border-radius:5px;flex-shrink:0;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;margin-top:1px}
-.chk-box:hover{border-color:var(--p)}
-.chk-box.checked{background:var(--p);border-color:var(--p);color:#fff}
-.chk-priority{font-size:10px;font-weight:900;padding:2px 7px;border-radius:4px;flex-shrink:0;margin-top:2px}
-.p-urgent{background:#fef2f2;color:#dc2626}
-.p-important{background:#fffbeb;color:#d97706}
-.p-normal{background:#f0fdf4;color:#16a34a}
-.chk-text{flex:1;line-height:1.6}
-
-/* 원문 텍스트 fallback */
-.raw-section{font-size:13px;line-height:1.9;white-space:pre-wrap;word-break:break-word;color:#374151;padding:4px 0}
-.raw-section strong{font-weight:700;color:var(--tx)}
-
-/* 인쇄 */
-@media print{
-  .topbar,.run-btn,.act-btn,.step,.msg,.sec-arrow{display:none!important}
-  .sec-body{display:block!important}
-  .sec-hd{cursor:default}
-  body{background:#fff;padding:0}
-  .dashboard{box-shadow:none;border:1px solid #ddd}
-}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>여수 산단 환경안전 법령 분석 시스템</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap');
+        body { font-family: 'Pretendard', sans-serif; }
+        .loading-shimmer {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+    </style>
 </head>
-<body>
+<body class="bg-slate-50 min-h-screen pb-12">
+    <!-- Header -->
+    <header class="bg-blue-900 text-white py-6 shadow-md mb-8">
+        <div class="container mx-auto px-4">
+            <h1 class="text-2xl font-bold flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+                여수 산단 환경안전 법령 분석 시스템
+            </h1>
+            <p class="text-blue-200 text-sm mt-1">법제처 실시간 API 기반 신구법 대조 및 AI 실무 액션 가이드</p>
+        </div>
+    </header>
 
-<div class="topbar">
-  <div class="logo">📋 환경법령 개정 대응 대시보드</div>
-  <div class="sub">여수국가산업단지 석유화학공장 환경안전팀</div>
-</div>
+    <main class="container mx-auto px-4 max-w-5xl">
+        <!-- Search Section -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6">
+            <div class="flex flex-col md:flex-row gap-4">
+                <div class="flex-1">
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">법령명 입력</label>
+                    <input type="text" id="lawInput" placeholder="예: 대기환경보전법, 물환경보전법" 
+                           class="w-full border border-slate-300 p-3 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition">
+                </div>
+                <div class="w-full md:w-48">
+                    <label class="block text-sm font-semibold text-slate-700 mb-2">구분</label>
+                    <select id="lawType" class="w-full border border-slate-300 p-3 rounded-xl bg-slate-50 outline-none">
+                        <option value="law">법률</option>
+                        <option value="decree">시행령</option>
+                        <option value="rule">시행규칙</option>
+                    </select>
+                </div>
+                <div class="flex items-end">
+                    <button onclick="loadLawHistory()" id="searchBtn" 
+                            class="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl transition shadow-lg shadow-blue-200">
+                        연혁 조회
+                    </button>
+                </div>
+            </div>
+        </div>
 
-<div class="wrap">
+        <!-- History Select Section (Hidden by default) -->
+        <div id="historyContainer" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6 animate-fade-in">
+            <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <span class="w-1 h-6 bg-blue-600 rounded-full"></span>
+                시행일 선택
+            </h2>
+            <div class="flex flex-col md:flex-row gap-4 items-center">
+                <select id="dateSelect" class="flex-1 border border-slate-300 p-3 rounded-xl bg-white outline-none focus:ring-2 focus:ring-blue-500"></select>
+                <button onclick="startAnalysis()" id="analyzeBtn"
+                        class="w-full md:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-10 rounded-xl transition shadow-lg shadow-emerald-100">
+                    AI 분석 시작
+                </button>
+            </div>
+            <p class="text-xs text-slate-400 mt-3">* 법제처 lsHistory API를 통해 확보된 실시간 연혁 정보입니다.</p>
+        </div>
 
-<!-- STEP 1 -->
-<div class="card">
-  <div class="lbl">1. 대상 법령 선택</div>
-  <div class="sw">
-    <select id="lawSel" onchange="onLaw()">
-      <option value="">법령을 선택하세요</option>
-      <option value="대기환경보전법|001160">대기환경보전법</option>
-      <option value="물환경보전법|001153">물환경보전법</option>
-      <option value="화학물질관리법|001211">화학물질관리법</option>
-      <option value="화학물질 등록 및 평가법|001210">화학물질 등록 및 평가법</option>
-      <option value="산업안전보건법|001138">산업안전보건법</option>
-      <option value="위험물안전관리법|001115">위험물안전관리법</option>
-      <option value="소음·진동관리법|001177">소음·진동관리법</option>
-      <option value="악취방지법|001173">악취방지법</option>
-      <option value="토양환경보전법|001213">토양환경보전법</option>
-      <option value="환경영향평가법|001071">환경영향평가법</option>
-    </select>
-  </div>
-</div>
+        <!-- Loading Indicator -->
+        <div id="loader" class="hidden space-y-4 py-12">
+            <div class="flex justify-center">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-4 border-blue-600"></div>
+            </div>
+            <p class="text-center text-slate-600 font-medium">법령 원문을 파싱하여 AI가 분석 중입니다...</p>
+        </div>
 
-<!-- STEP 2 -->
-<div class="card">
-  <div class="srow"><div class="dot" id="dot"></div><span id="gasMsg">법령 선택 후 자동 조회</span></div>
-  <div class="lbl">2. 시행일자 선택 (법제처 실시간 연동)</div>
-  <div class="sw">
-    <select id="dateSel" disabled>
-      <option value="">법령을 먼저 선택하세요</option>
-    </select>
-  </div>
-  <div class="msg err" id="errBox"></div>
-</div>
+        <!-- Result Section -->
+        <div id="resultView" class="hidden space-y-6">
+            <!-- Summary Card -->
+            <div id="summaryCard" class="bg-blue-50 border border-blue-100 rounded-2xl p-6"></div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Change Items -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="bg-amber-50 px-6 py-4 border-b border-amber-100">
+                        <h3 class="font-bold text-amber-800 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                            </svg>
+                            주요 강화/변경 사항
+                        </h3>
+                    </div>
+                    <div id="changeList" class="p-6 text-slate-700 text-sm leading-relaxed space-y-3"></div>
+                </div>
 
-<!-- 실행 -->
-<button class="run-btn" id="runBtn" onclick="run()">
-  ⚡ 개정 내용 분석 실행
-</button>
-<div class="step" id="stepBox"></div>
+                <!-- Action Items -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="bg-emerald-50 px-6 py-4 border-b border-emerald-100">
+                        <h3 class="font-bold text-emerald-800 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                            </svg>
+                            현장 대응 Action Item
+                        </h3>
+                    </div>
+                    <div id="actionList" class="p-6 text-slate-700 text-sm leading-relaxed space-y-3"></div>
+                </div>
+            </div>
+        </div>
+    </main>
 
-<!-- 결과 대시보드 -->
-<div class="dashboard" id="dash" style="display:none">
+    <script>
+        // 새로운 GAS 배포 URL
+        const ENDPOINT = "https://script.google.com/macros/s/AKfycbwLNP7xvtj-ZmEV7MZ8iCaLJa5H97uT9GXDXo4o5nwwbn5BAjRCVF1BHJ-0l62biKqGPA/exec";
 
-  <div class="db-head">
-    <h2 id="rTitle"></h2>
-    <div class="db-tags" id="rTags"></div>
-    <div class="cmp-banner" id="cmpBanner"></div>
-  </div>
+        // JSONP 호출 함수
+        function fetchGAS(params) {
+            return new Promise((resolve, reject) => {
+                const callbackName = 'jsonp_' + Math.round(100000 * Math.random());
+                const script = document.createElement('script');
+                params.callback = callbackName;
+                
+                const qs = Object.keys(params).map(key => `${key}=${encodeURIComponent(params[key])}`).join('&');
+                script.src = `${ENDPOINT}?${qs}`;
 
-  <div class="db-actions">
-    <button class="act-btn print" onclick="window.print()">🖨️ 인쇄</button>
-    <button class="act-btn" onclick="doCopy()">📋 전체 복사</button>
-    <button class="act-btn" onclick="expandAll()">📂 전체 펼치기</button>
-    <button class="act-btn" onclick="collapseAll()">📁 전체 접기</button>
-  </div>
+                window[callbackName] = (data) => {
+                    delete window[callbackName];
+                    document.body.removeChild(script);
+                    if (data.error) reject(data.error);
+                    else resolve(data);
+                };
 
-  <div id="dashBody"></div>
-</div>
+                script.onerror = () => reject("GAS 엔드포인트 연결 실패");
+                document.body.appendChild(script);
+            });
+        }
 
-</div><!-- /wrap -->
+        async function loadLawHistory() {
+            const lawName = document.getElementById('lawInput').value.trim();
+            const lawType = document.getElementById('lawType').value;
+            if (!lawName) return alert("법령명을 입력하세요.");
 
-<script>
-const GAS = "https://script.google.com/macros/s/AKfycbzDs7NeiG_JMj9CFojzAy3E56-hwuDAuwFOU5WCEGoXcY81J-vLGuYvDtjs-lkLEKG8Uw/exec";
-let lawId="", lawName="", allDates=[], lastText="";
+            setLoading(true);
+            try {
+                const res = await fetchGAS({ action: 'dates', lawName, lawType });
+                
+                const select = document.getElementById('dateSelect');
+                select.innerHTML = '';
+                
+                res.dates.forEach(date => {
+                    const opt = document.createElement('option');
+                    opt.value = date;
+                    opt.dataset.id = res.mstMap[date];
+                    opt.textContent = `${date.substring(0,4)}년 ${date.substring(4,6)}월 ${date.substring(6,8)}일 시행분`;
+                    select.appendChild(opt);
+                });
 
-/* ── JSONP ────────────────────────────────────── */
-function jsonp(p,cb,ms){
-  return new Promise(function(res,rej){
-    var old=document.getElementById("__"+cb); if(old)old.remove();
-    var t=setTimeout(function(){delete window[cb];rej(new Error("응답없음("+ms/1000+"초)"));},ms);
-    window[cb]=function(d){clearTimeout(t);delete window[cb];res(d);};
-    var s=document.createElement("script");
-    s.id="__"+cb;
-    s.src=GAS+"?"+new URLSearchParams(p).toString();
-    s.onerror=function(){clearTimeout(t);delete window[cb];rej(new Error("GAS 연결 실패 — 배포설정 확인"));};
-    document.body.appendChild(s);
-  });
-}
+                window.allDates = JSON.stringify(res.dates);
+                document.getElementById('historyContainer').classList.remove('hidden');
+                document.getElementById('resultView').classList.add('hidden');
+            } catch (err) {
+                alert("오류: " + err);
+            } finally {
+                setLoading(false);
+            }
+        }
 
-/* ── 법령 선택 ────────────────────────────────── */
-async function onLaw(){
-  var v=document.getElementById("lawSel").value;
-  var sel=document.getElementById("dateSel");
-  var err=document.getElementById("errBox");
-  err.classList.remove("show"); allDates=[];
-  if(!v){sel.innerHTML="<option value=''>법령을 먼저 선택하세요</option>";sel.disabled=true;setDot("","법령 선택 후 자동 조회");return;}
-  var p=v.split("|"); lawName=p[0]; lawId=p[1];
-  sel.disabled=true;sel.innerHTML="<option>조회 중...</option>";setDot("ing","법제처 연결 중...");
-  try{
-    var d=await jsonp({action:"dates",id:lawId,lawName:lawName,callback:"__cb_d"},"__cb_d",15000);
-    if(d.error){setDot("err","오류");sel.innerHTML="<option>오류</option>";showErr("API 오류: "+d.error);return;}
-    if(!d.dates||!d.dates.length){
-      setDot("ok","연결됨");sel.innerHTML="<option value=''>시행일 없음</option>";
-      if(d.debug)showErr("시행일 없음. 응답: "+d.debug);
-      return;
-    }
-    allDates=d.dates;
-    setDot("ok","연결됨 ✓ — "+d.dates.length+"건 조회");
-    sel.innerHTML="<option value=''>시행일을 선택하세요</option>"+
-      d.dates.map(function(x){
-        var f=x.slice(0,4)+"년 "+x.slice(4,6)+"월 "+x.slice(6,8)+"일";
-        return'<option value="'+x+'">'+f+' 시행분</option>';
-      }).join("");
-    sel.disabled=false;
-  }catch(ex){setDot("err","연결 실패");sel.innerHTML="<option>연결 실패</option>";showErr(ex.message);}
-}
+        async function startAnalysis() {
+            const select = document.getElementById('dateSelect');
+            const opt = select.options[select.selectedIndex];
+            if (!opt) return;
 
-/* ── AI 분석 실행 ─────────────────────────────── */
-async function run(){
-  if(!lawId){alert("법령을 선택하세요");return;}
-  var date=document.getElementById("dateSel").value;
-  if(!date){alert("시행일을 선택하세요");return;}
-  var btn=document.getElementById("runBtn"),step=document.getElementById("stepBox");
-  btn.disabled=true;btn.innerHTML='<div class="spin"></div>&ensp;이전/현재 법령 원문 분석 중...';
-  document.getElementById("dash").style.display="none";
-  step.classList.add("show");step.textContent="⏳ 법제처에서 "+lawName+" 원문 및 이전 시행본 가져오는 중...";
-  try{
-    step.textContent="🤖 이전 ↔ 현재 법령 비교 분석 중... (최대 60초)";
-    var d=await jsonp({
-      action:"analyze",id:lawId,date:date,lawName:lawName,
-      allDates:JSON.stringify(allDates),callback:"__cb_a"
-    },"__cb_a",60000);
-    if(d.error)throw new Error(d.error);
-    var df=date.slice(0,4)+"-"+date.slice(4,6)+"-"+date.slice(6,8);
-    lastText=d.content;
-    // 헤더
-    document.getElementById("rTitle").textContent=lawName+" — 개정 대응 보고서";
-    var tags='<span class="tag t-date">📅 '+df+' 시행</span>';
-    if(d.prevDate) tags+='<span class="tag t-prev">↩ 이전: '+d.prevDateFmt+'</span>';
-    tags+=d.hasSource?'<span class="tag t-src">✅ 원문 기반</span>':'<span class="tag t-nosrc">⚠️ 추정 포함</span>';
-    if(d.tokens) tags+='<span class="tag t-tok">'+d.tokens.toLocaleString()+'토큰</span>';
-    document.getElementById("rTags").innerHTML=tags;
-    // 비교 배너
-    var banner=document.getElementById("cmpBanner");
-    if(d.prevDate){
-      banner.innerHTML=
-        '<span class="prev-lbl">비교 기준</span>'+
-        '<span class="prev-val">'+d.prevDateFmt+'</span>'+
-        '<span class="arrow">→</span>'+
-        '<span class="cur-val">'+df+'</span>';
-      banner.style.display="flex";
-    }else{
-      banner.style.display="none";
-    }
-    renderDash(d.content);
-    document.getElementById("dash").style.display="block";
-    setTimeout(function(){document.getElementById("dash").scrollIntoView({behavior:"smooth",block:"start"});},100);
-  }catch(ex){alert("오류: "+ex.message);}
-  finally{btn.disabled=false;btn.innerHTML="⚡ 개정 내용 분석 실행";step.classList.remove("show");}
-}
+            setLoading(true);
+            try {
+                const res = await fetchGAS({
+                    action: 'analyze',
+                    id: opt.dataset.id,
+                    date: opt.value,
+                    allDates: window.allDates
+                });
+                renderResult(res);
+            } catch (err) {
+                alert("분석 중 오류 발생: " + err);
+            } finally {
+                setLoading(false);
+            }
+        }
 
-/* ── 대시보드 렌더링 ──────────────────────────── */
-var SEC_DEFS=[
-  {key:"SECTION_1",num:"1",title:"개정 핵심 요약",cls:"n1"},
-  {key:"SECTION_2",num:"2",title:"조항별 변경 상세",cls:"n2"},
-  {key:"SECTION_3",num:"3",title:"설비별 즉시 조치사항",cls:"n3"},
-  {key:"SECTION_4",num:"4",title:"인허가 행정 조치",cls:"n4"},
-  {key:"SECTION_5",num:"5",title:"위반 시 제재",cls:"n5"},
-  {key:"SECTION_6",num:"6",title:"즉시 실행 체크리스트",cls:"n6"}
-];
+        function renderResult(res) {
+            const { analysis, dateInfo } = res;
+            const view = document.getElementById('resultView');
+            
+            // 요약 영역
+            document.getElementById('summaryCard').innerHTML = `
+                <div class="flex justify-between items-start">
+                    <div>
+                        <h2 class="text-xl font-bold text-blue-900">분석 결과: ${formatDate(dateInfo.current)} 시행분</h2>
+                        <p class="text-blue-700 text-sm mt-1">대조군: ${dateInfo.previous ? formatDate(dateInfo.previous) + ' 시행령' : '최초 제정 또는 이전 데이터 없음'}</p>
+                    </div>
+                    <span class="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase">AI Verified</span>
+                </div>
+            `;
 
-function renderDash(text){
-  var body=document.getElementById("dashBody");
-  // 섹션 분리
-  var sections=[];
-  var rem=text;
-  for(var i=0;i<SEC_DEFS.length;i++){
-    var s=SEC_DEFS[i];
-    var si=rem.indexOf("■ "+s.key);
-    if(si<0) si=rem.indexOf(s.key);
-    if(si<0) continue;
-    var ei=rem.length;
-    for(var j=i+1;j<SEC_DEFS.length;j++){
-      var nk=SEC_DEFS[j].key;
-      var ni=rem.indexOf("■ "+nk,si+1);
-      if(ni<0) ni=rem.indexOf(nk,si+1);
-      if(ni>si){ei=ni;break;}
-    }
-    var content=rem.slice(si,ei).replace(/■\s*SECTION_\d+[:\s]*/,"").trim();
-    sections.push({def:s,content:content});
-  }
+            // 강화사항 (분석 결과가 배열이 아닐 경우를 대비해 처리)
+            const listToHtml = (list) => {
+                if (!Array.isArray(list)) return `<li>${list}</li>`;
+                return list.map(item => `<li class="flex items-start gap-2"><span class="mt-1.5 w-1.5 h-1.5 bg-slate-400 rounded-full shrink-0"></span>${item}</li>`).join('');
+            };
 
-  if(!sections.length){
-    // fallback: 원문 그대로
-    body.innerHTML='<div class="sec"><div class="sec-body open" style="display:block"><div class="raw-section">'+
-      formatRaw(text)+'</div></div></div>';
-    return;
-  }
+            // GAS의 prompt 설계에 따른 JSON 키 매핑 (강화사항, 조치사항 등)
+            // Code.gs의 prompt에 따라 '강화사항', '조치사항' 키로 올 것으로 예상되나, 
+            // AI 모델에 따라 키 이름이 변할 수 있으므로 유연하게 처리합니다.
+            const data = analysis.analysis || analysis; // 중첩 구조 대응
+            
+            // 키 찾기 유틸리티
+            const findKey = (obj, keywords) => {
+                const key = Object.keys(obj).find(k => keywords.some(kw => k.includes(kw)));
+                return obj[key] || [];
+            };
 
-  var html="";
-  sections.forEach(function(sec,idx){
-    var open=idx===0?"open":"";
-    html+=
-      '<div class="sec">'+
-        '<div class="sec-hd" onclick="toggleSec(this)">'+
-          '<span class="sec-num '+sec.def.cls+'">'+sec.def.num+'</span>'+
-          '<span class="sec-title">'+sec.def.title+'</span>'+
-          '<span class="sec-arrow '+(open?"open":"")+'">▼</span>'+
-        '</div>'+
-        '<div class="sec-body '+(open?'open':'')+'" style="'+(open?'display:block':'display:none')+'">'+
-          renderSecContent(sec.def.num, sec.content)+
-        '</div>'+
-      '</div>';
-  });
-  body.innerHTML=html;
-}
+            const changes = findKey(data, ['강화', '변경', '사항', '핵심']);
+            const actions = findKey(data, ['조치', '대응', '액션', 'Action']);
 
-function renderSecContent(num, text){
-  if(num==="1") return renderSummary(text);
-  if(num==="2") return renderArticles(text);
-  if(num==="3") return renderEquipment(text);
-  if(num==="6") return renderChecklist(text);
-  return '<div class="raw-section">'+formatRaw(text)+'</div>';
-}
+            document.getElementById('changeList').innerHTML = `<ul class="space-y-3">${listToHtml(changes)}</ul>`;
+            document.getElementById('actionList').innerHTML = `<ul class="space-y-3">${listToHtml(actions)}</ul>`;
 
-// 섹션1: 핵심 요약 (테이블)
-function renderSummary(text){
-  // 마크다운 표 파싱
-  var rows=text.split("\n").filter(function(l){return l.includes("|")&&!l.match(/^[\|\-\s]+$/);});
-  if(rows.length<2){return '<div class="raw-section">'+formatRaw(text)+'</div>';}
-  var header=rows[0]; var dataRows=rows.slice(1);
-  var cols=header.split("|").map(function(c){return c.trim();}).filter(Boolean);
-  var html='<div style="overflow-x:auto"><table class="tbl"><thead><tr>';
-  cols.forEach(function(c){html+='<th>'+esc(c)+'</th>';});
-  html+='</tr></thead><tbody>';
-  dataRows.forEach(function(row){
-    var cells=row.split("|").map(function(c){return c.trim();}).filter(Boolean);
-    html+='<tr>';
-    cells.forEach(function(cell,i){
-      var cls='';
-      if(i===cols.length-1){
-        if(cell==='상') cls='badge-hi';
-        else if(cell==='중') cls='badge-mid';
-        else if(cell==='하') cls='badge-lo';
-      }
-      html+='<td>'+(cls?'<span class="'+cls+'">'+esc(cell)+'</span>':esc(cell))+'</td>';
-    });
-    html+='</tr>';
-  });
-  html+='</tbody></table></div>';
-  return html;
-}
+            view.classList.remove('hidden');
+            view.scrollIntoView({ behavior: 'smooth' });
+        }
 
-// 섹션2: 조항별 변경
-function renderArticles(text){
-  var blocks=text.split(/\[제\d+조[^\]]*\]|\[제[가-힣]+조[^\]]*\]/);
-  var titles=text.match(/\[제\d+조[^\]]*\]|\[제[가-힣]+조[^\]]*\]/g)||[];
-  if(!titles.length) return '<div class="raw-section">'+formatRaw(text)+'</div>';
-  var html='';
-  titles.forEach(function(title,i){
-    var body=blocks[i+1]||"";
-    var bef=extractField(body,["변경 전","이전"]);
-    var aft=extractField(body,["변경 후","현재"]);
-    var why=extractField(body,["변경 이유","이유","우리 공장 영향"]);
-    html+=
-      '<div class="art-card">'+
-        '<h4>'+esc(title)+'</h4>'+
-        '<div class="diff-row">'+
-          '<div class="diff-old"><div class="diff-label">▲ 변경 전</div>'+(bef?esc(bef):'(원문 없음)')+'</div>'+
-          '<div class="diff-new"><div class="diff-label">▼ 변경 후</div>'+(aft?esc(aft):'(원문 없음)')+'</div>'+
-        '</div>'+
-        (why?'<div class="diff-reason"><div class="diff-label">📌 영향 및 이유</div>'+esc(why)+'</div>':'')+
-      '</div>';
-  });
-  return html;
-}
+        function setLoading(show) {
+            document.getElementById('loader').classList.toggle('hidden', !show);
+            document.getElementById('searchBtn').disabled = show;
+            if (document.getElementById('analyzeBtn')) document.getElementById('analyzeBtn').disabled = show;
+        }
 
-// 섹션3: 설비별 조치
-function renderEquipment(text){
-  var EQ=["RTO","Flare Stack","Flare","LDAR","Scrubber","저장탱크","폐수처리","방지시설"];
-  var html='';
-  var found=false;
-  EQ.forEach(function(eq){
-    var rx=new RegExp("\\[?"+eq+"[^\\]]*\\]?\\s*([\\s\\S]*?)(?=\\[(?:"+EQ.join("|")+")[^\\]]*\\]|$)","i");
-    var m=text.match(rx);
-    if(!m) return;
-    var body=m[1].trim();
-    if(body.length<10) return;
-    found=true;
-    var action=extractField(body,["조치","조치내용"]);
-    var deadline=extractField(body,["기한","완료기한"]);
-    var dept=extractField(body,["담당","담당부서"]);
-    var isUrgent=deadline&&deadline.match(/즉시|긴급|당장/i);
-    html+=
-      '<div class="eq-card">'+
-        '<div class="eq-head">⚙️ '+esc(eq)+(isUrgent?' <span style="color:#fbbf24;font-size:11px">⚠️ 긴급</span>':'')+'</div>'+
-        '<div class="eq-body">'+
-          (action?'<div class="eq-row"><span class="eq-key">조치:</span><span class="eq-val">'+esc(action)+'</span></div>':'')+
-          (deadline?'<div class="eq-row"><span class="eq-key">기한:</span><span class="eq-val '+(isUrgent?'urgent':'')+'">'+esc(deadline)+'</span></div>':'')+
-          (dept?'<div class="eq-row"><span class="eq-key">담당:</span><span class="eq-val">'+esc(dept)+'</span></div>':'')+
-          ((!action&&!deadline&&!dept)?'<div class="raw-section" style="font-size:13px">'+formatRaw(body)+'</div>':'')+
-        '</div>'+
-      '</div>';
-  });
-  return found?html:'<div class="raw-section">'+formatRaw(text)+'</div>';
-}
-
-// 섹션6: 체크리스트
-function renderChecklist(text){
-  var items=text.split("\n").filter(function(l){return /□|✓|●|[긴급중요일반]/.test(l)&&l.trim().length>3;});
-  if(!items.length) return '<div class="raw-section">'+formatRaw(text)+'</div>';
-  var html='';
-  items.forEach(function(item,i){
-    var txt=item.replace(/^[□✓●\-·\*\s]+/,"").trim();
-    var cls='p-normal', lbl='일반';
-    if(/긴급|즉시|당장/.test(item)){cls='p-urgent';lbl='긴급';}
-    else if(/중요|1개월|한달/.test(item)){cls='p-important';lbl='중요';}
-    html+=
-      '<div class="chk-item">'+
-        '<div class="chk-box" onclick="this.classList.toggle(\'checked\');this.textContent=this.classList.contains(\'checked\')?\'✓\':\'\'"></div>'+
-        '<span class="chk-priority '+cls+'">'+lbl+'</span>'+
-        '<span class="chk-text">'+esc(txt)+'</span>'+
-      '</div>';
-  });
-  return html;
-}
-
-// 유틸
-function extractField(text,keys){
-  for(var i=0;i<keys.length;i++){
-    var rx=new RegExp("(?:"+keys[i]+")[：:\\s]*([^\n]+(?:\n(?![\\-·•])[^\n]+)*)","i");
-    var m=text.match(rx);
-    if(m) return m[1].trim().slice(0,200);
-  }
-  return "";
-}
-function formatRaw(text){
-  return text.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
-    .replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>")
-    .replace(/\n/g,"<br>");
-}
-function esc(t){return (t||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
-
-function toggleSec(hd){
-  var body=hd.nextElementSibling;
-  var arr=hd.querySelector(".sec-arrow");
-  var open=body.style.display!=="none";
-  body.style.display=open?"none":"block";
-  arr.classList.toggle("open",!open);
-}
-function expandAll(){document.querySelectorAll(".sec-body").forEach(function(b){b.style.display="block";b.classList.add("open");});document.querySelectorAll(".sec-arrow").forEach(function(a){a.classList.add("open");});}
-function collapseAll(){document.querySelectorAll(".sec-body").forEach(function(b){b.style.display="none";b.classList.remove("open");});document.querySelectorAll(".sec-arrow").forEach(function(a){a.classList.remove("open");});}
-
-function setDot(s,m){document.getElementById("dot").className="dot "+s;document.getElementById("gasMsg").textContent=m;}
-function showErr(h){var e=document.getElementById("errBox");e.innerHTML=h;e.classList.add("show");}
-function doCopy(){
-  if(!lastText)return;
-  navigator.clipboard.writeText(lastText).then(function(){alert("복사되었습니다.");}).catch(function(){alert("직접 선택해서 복사하세요.");});
-}
-</script>
+        function formatDate(d) {
+            if (!d || d.length < 8) return d;
+            return `${d.substring(0,4)}년 ${d.substring(4,6)}월 ${d.substring(6,8)}일`;
+        }
+    </script>
 </body>
 </html>
+
+```
