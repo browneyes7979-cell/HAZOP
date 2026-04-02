@@ -222,7 +222,7 @@ select:disabled{opacity:.4;cursor:not-allowed}
 </div>
 
 <script>
-var GAS = "https://script.google.com/macros/s/AKfycbyhOVJMUcHRp1PVJWLOa3n2LRnXNBmV88brmFcoRqS1R6ErZgrAr7kCbY1n4tluAr6L7w/exec";
+var GAS = "https://script.google.com/macros/s/AKfycbxV51hM7M31xqRzrNVzpkWp28jVBldCU2Tt2oBFJ7zRUUR3EJNjaDi5udu6mjJ6EpCgwA/exec";
 var lawName="", lawType="law", allDates=[], mstMap={}, curResult=null;
 
 function jsonp(p,cb,ms){
@@ -280,17 +280,11 @@ function showDebugBtn(){document.getElementById("debugBtn").style.display="inlin
 
 async function runDebug(){
   var panel=document.getElementById("debugPanel");
-  panel.innerHTML="<span style='color:#60a5fa'>진단 중 (step 1: lsHistory)...</span>";panel.classList.add("show");
+  panel.innerHTML="<span style='color:#60a5fa'>3개 URL 테스트 중...</span>";panel.classList.add("show");
   try{
-    var d1=await jsonp({action:"debug",lawName:lawName,lawType:lawType,step:"1",callback:"__cbdbg"},"__cbdbg",45000);
-    var html="<pre style='white-space:pre-wrap;color:#e2e8f0'><b>== lsHistory ==</b>\n"+esc(JSON.stringify(d1,null,2))+"</pre>";
-    panel.innerHTML=html+"<br><span style='color:#60a5fa'>step 2: data.go.kr...</span>";
-    try{
-      var d2=await jsonp({action:"debug",lawName:lawName,lawType:lawType,step:"2",callback:"__cbdbg2"},"__cbdbg2",45000);
-      html+="<pre style='white-space:pre-wrap;color:#e2e8f0'><b>== data.go.kr ==</b>\n"+esc(JSON.stringify(d2,null,2))+"</pre>";
-    }catch(ex2){html+="<pre style='color:#f87171'>data.go.kr 타임아웃</pre>";}
-    panel.innerHTML=html;
-  }catch(ex){panel.innerHTML="<span style='color:#f87171'>lsHistory 타임아웃 ("+ex.message+")</span>";}
+    var d=await jsonp({action:"debug",callback:"__cbdbg"},"__cbdbg",60000);
+    panel.innerHTML="<pre style='white-space:pre-wrap;color:#e2e8f0'>"+esc(JSON.stringify(d,null,2))+"</pre>";
+  }catch(ex){panel.innerHTML="<span style='color:#f87171'>타임아웃: "+esc(ex.message)+"</span>";}
 }
 
 function checkCache(){
