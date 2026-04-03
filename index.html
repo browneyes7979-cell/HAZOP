@@ -6,27 +6,25 @@
 <title>환경법령 개정 대응 대시보드</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
-:root{--p:#2563eb;--bg:#f0f4f8;--card:#fff;--bd:#dde3ea;--tx:#0f172a;--mu:#64748b;--red:#dc2626;--ora:#d97706;--grn:#16a34a}
+:root{--p:#2563eb;--bg:#f0f4f8;--card:#fff;--bd:#dde3ea;--tx:#0f172a;--mu:#64748b;--red:#dc2626;--grn:#16a34a}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--tx)}
 .topbar{background:linear-gradient(135deg,#0f172a,#1e3a5f);color:#fff;padding:14px 20px;display:flex;align-items:center;gap:12px}
-.topbar .logo{font-size:17px;font-weight:900}
-.topbar .sub{font-size:11px;color:#94a3b8;margin-left:auto}
-.wrap{max-width:820px;margin:0 auto;padding:20px 16px 80px}
+.topbar .logo{font-size:17px;font-weight:900}.topbar .sub{font-size:11px;color:#94a3b8;margin-left:auto}
+.wrap{max-width:860px;margin:0 auto;padding:20px 16px 80px}
 .card{background:var(--card);border-radius:18px;padding:20px;margin-bottom:14px;box-shadow:0 1px 8px rgba(0,0,0,.07);border:1px solid var(--bd)}
 .lbl{font-size:10px;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:var(--p);margin-bottom:12px;display:flex;align-items:center;gap:6px}
 .lbl::before{content:'';width:3px;height:14px;background:var(--p);border-radius:2px}
-.sw{position:relative}
-.sw::after{content:'';position:absolute;right:16px;top:50%;transform:translateY(-50%);border:5px solid transparent;border-top-color:#94a3b8;pointer-events:none}
+.sw{position:relative}.sw::after{content:'';position:absolute;right:16px;top:50%;transform:translateY(-50%);border:5px solid transparent;border-top-color:#94a3b8;pointer-events:none}
 select{width:100%;padding:13px 42px 13px 16px;border:1.5px solid var(--bd);border-radius:12px;background:#fff;font-family:'Noto Sans KR',sans-serif;font-size:15px;font-weight:700;color:var(--tx);outline:none;appearance:none;cursor:pointer;transition:.2s}
-select:focus,select:hover{border-color:var(--p);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+select:focus{border-color:var(--p);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
 select:disabled{opacity:.4;cursor:not-allowed}
 .type-btns{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:4px}
 .type-btn{padding:14px 8px;border:2px solid var(--bd);border-radius:14px;background:#fff;cursor:pointer;text-align:center;transition:.2s;font-family:'Noto Sans KR',sans-serif}
 .type-btn:hover{border-color:var(--p);background:#eff6ff}
 .type-btn.active{border-color:var(--p);background:#eff6ff;box-shadow:0 0 0 3px rgba(37,99,235,.1)}
 .type-btn .icon{font-size:26px;display:block;margin-bottom:6px}
-.type-btn .name{font-size:13px;font-weight:900;color:var(--tx);display:block}
+.type-btn .name{font-size:13px;font-weight:900;display:block}
 .type-btn .desc{font-size:10px;color:var(--mu);display:block;margin-top:2px}
 .srow{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--mu);margin-bottom:10px}
 .dot{width:8px;height:8px;border-radius:50%;background:#cbd5e1;flex-shrink:0}
@@ -35,257 +33,182 @@ select:disabled{opacity:.4;cursor:not-allowed}
 .dot.ing{background:#f59e0b;animation:pulse 1.2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 .run-btn{width:100%;height:58px;border:none;border-radius:14px;background:linear-gradient(135deg,#1e40af,#2563eb);color:#fff;font-family:'Noto Sans KR',sans-serif;font-size:15px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:.2s;margin-bottom:14px;box-shadow:0 4px 16px rgba(37,99,235,.3)}
-.run-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 6px 24px rgba(37,99,235,.4)}
-.run-btn:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
-.spin{width:18px;height:18px;border:3px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+.run-btn:hover:not(:disabled){transform:translateY(-2px)}.run-btn:disabled{opacity:.5;cursor:not-allowed}
+.spin{width:18px;height:18px;border:3px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 .msg{border-radius:10px;padding:11px 14px;font-size:13px;line-height:1.6;margin-top:10px;display:none}
-.msg.show{display:block}
-.msg.err{background:#fef2f2;border:1px solid #fecaca;color:#b91c1c}
+.msg.show{display:block}.msg.err{background:#fef2f2;border:1px solid #fecaca;color:#b91c1c}
 .msg.warn{background:#fffbeb;border:1px solid #fde68a;color:#92400e}
-.step{background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:11px 14px;font-size:13px;font-weight:700;color:#1d4ed8;margin-bottom:14px;display:none}
-.step.show{display:block}
-.cache-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:11px;font-weight:700;color:#16a34a;margin-bottom:12px;display:none}
-.cache-badge.show{display:inline-flex}
-.debug-btn{padding:6px 12px;border:1px solid #475569;border-radius:8px;background:#1e293b;font-family:'Noto Sans KR',sans-serif;font-size:11px;font-weight:700;color:#94a3b8;cursor:pointer;margin-top:8px;transition:.15s}
-.debug-btn:hover{border-color:#60a5fa;color:#60a5fa}
-.debug-panel{background:#0f172a;border:1px solid #334155;border-radius:12px;padding:14px;margin-top:10px;display:none;font-family:monospace;font-size:11px;line-height:1.7;color:#94a3b8;max-height:400px;overflow-y:auto;word-break:break-all}
-.debug-panel.show{display:block}
+.step{background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:11px 14px;font-size:13px;font-weight:700;color:#1d4ed8;margin-bottom:14px;display:none}.step.show{display:block}
+.cache-badge{display:none;align-items:center;gap:5px;padding:4px 10px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:11px;font-weight:700;color:#16a34a;margin-bottom:12px}.cache-badge.show{display:inline-flex}
+.debug-btn{padding:6px 12px;border:1px solid #475569;border-radius:8px;background:#1e293b;font-family:'Noto Sans KR',sans-serif;font-size:11px;font-weight:700;color:#94a3b8;cursor:pointer;margin-top:8px}.debug-btn:hover{border-color:#60a5fa;color:#60a5fa}
+.debug-panel{background:#0f172a;border:1px solid #334155;border-radius:12px;padding:14px;margin-top:10px;display:none;font-family:monospace;font-size:11px;line-height:1.7;color:#94a3b8;max-height:300px;overflow-y:auto;word-break:break-all}.debug-panel.show{display:block}
+/* 대시보드 */
 .dash{background:var(--card);border-radius:18px;border:1px solid var(--bd);overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,.08)}
 .dash-head{background:linear-gradient(135deg,#0f172a,#1e3a5f);padding:20px;color:#fff}
-.dash-head h2{font-size:19px;font-weight:900;margin-bottom:10px}
-.dash-tags{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}
+.dash-head h2{font-size:18px;font-weight:900;margin-bottom:8px}
+.dash-tags{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px}
 .tag{padding:4px 11px;border-radius:20px;font-size:11px;font-weight:700}
-.t-d{background:rgba(59,130,246,.3);color:#93c5fd}.t-p{background:rgba(168,85,247,.3);color:#d8b4fe}
-.t-s{background:rgba(34,197,94,.3);color:#86efac}.t-w{background:rgba(251,191,36,.3);color:#fde68a}
-.t-k{background:rgba(99,102,241,.3);color:#a5b4fc}
-.cmp{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.cmp .lv{font-size:11px;color:#94a3b8;font-weight:600}.cmp .pv{font-size:13px;font-weight:900;color:#fbbf24}
-.cmp .ar{color:#60a5fa;font-size:14px}.cmp .cv{font-size:13px;font-weight:900;color:#34d399}
+.t-d{background:rgba(59,130,246,.3);color:#93c5fd}.t-s{background:rgba(34,197,94,.3);color:#86efac}.t-w{background:rgba(251,191,36,.3);color:#fde68a}
+.cmp{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px}
+.cmp .pv{font-weight:900;color:#fbbf24}.cmp .cv{font-weight:900;color:#34d399}.cmp .ar{color:#60a5fa}
 .db-act{display:flex;gap:8px;padding:12px 18px;background:#f8fafc;border-bottom:1px solid var(--bd);flex-wrap:wrap}
-.ab{padding:7px 12px;border:1.5px solid var(--bd);border-radius:8px;background:#fff;font-family:'Noto Sans KR',sans-serif;font-size:12px;font-weight:700;color:var(--mu);cursor:pointer;transition:.15s}
-.ab:hover{border-color:var(--p);color:var(--p)}
+.ab{padding:7px 12px;border:1.5px solid var(--bd);border-radius:8px;background:#fff;font-family:'Noto Sans KR',sans-serif;font-size:12px;font-weight:700;color:var(--mu);cursor:pointer}.ab:hover{border-color:var(--p);color:var(--p)}
+/* TOP3 */
+.top3{background:linear-gradient(135deg,#dc2626,#b91c1c);border-radius:14px;padding:16px;margin:16px 18px;color:#fff}
+.top3 h3{font-size:14px;font-weight:900;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.top3-item{background:rgba(255,255,255,.12);border-radius:10px;padding:12px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start}
+.top3-item:last-child{margin-bottom:0}
+.top3-rank{background:#fff;color:#dc2626;width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;flex-shrink:0}
+.top3-body{flex:1}.top3-task{font-size:13px;font-weight:900;margin-bottom:3px}.top3-reason{font-size:11px;color:rgba(255,255,255,.75)}
+/* 4분류 요약 */
+.cat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:16px 18px}
+.cat-card{border-radius:12px;padding:14px;text-align:center;border:1px solid var(--bd)}
+.cat-icon{font-size:24px;display:block;margin-bottom:4px}
+.cat-name{font-size:12px;font-weight:900;color:var(--mu)}
+.cat-cnt{font-size:28px;font-weight:900;margin:4px 0}
+.cat-urg{font-size:11px;font-weight:700;color:var(--red)}
+/* 상세 */
 .sec{border-bottom:1px solid #f1f5f9}.sec:last-child{border-bottom:none}
-.sec-hd{display:flex;align-items:center;gap:10px;padding:15px 18px;cursor:pointer;transition:.15s;user-select:none}
-.sec-hd:hover{background:#f8fafc}
-.sec-num{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;flex-shrink:0;color:#fff}
-.n1{background:#dc2626}.n2{background:#d97706}.n3{background:#2563eb}.n4{background:#7c3aed}
+.sec-hd{display:flex;align-items:center;gap:10px;padding:15px 18px;cursor:pointer;user-select:none}.sec-hd:hover{background:#f8fafc}
+.sec-num{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:#fff;flex-shrink:0}
 .sec-title{font-size:14px;font-weight:900;flex:1}
 .sec-arr{font-size:12px;color:#94a3b8;transition:.2s}.sec-arr.open{transform:rotate(180deg)}
-.sec-body{padding:4px 18px 18px;display:none}.sec-body.open{display:block}
-.sum-tbl{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
-.sum-tbl th{background:#f1f5f9;padding:9px 12px;font-weight:700;font-size:11px;color:var(--mu);border:1px solid var(--bd);text-align:center}
-.sum-tbl td{padding:10px 12px;border:1px solid var(--bd);text-align:center;vertical-align:middle}
-.sum-tbl .row-hd{font-weight:700;text-align:left;background:#fafafa}.sum-tbl .total-row{background:#f0fdf4;font-weight:900}
-.cnt-btn{display:inline-block;min-width:30px;padding:3px 10px;border-radius:6px;cursor:pointer;font-weight:900;font-size:13px;transition:.15s;border:none;font-family:'Noto Sans KR',sans-serif}
-.cnt-btn.zero{background:#f1f5f9;color:#94a3b8;cursor:default}
-.cnt-btn.simple{background:#dbeafe;color:#1d4ed8}.cnt-btn.action{background:#fef2f2;color:#dc2626}
-.detail-panel{background:#f8fafc;border:1px solid var(--bd);border-radius:12px;padding:14px;margin-top:10px;display:none}
-.detail-panel.show{display:block}
-.chg-card{background:#fff;border:1px solid var(--bd);border-radius:10px;margin-bottom:10px;overflow:hidden}
-.chg-hd{display:flex;align-items:center;gap:8px;padding:10px 14px;background:#f8fafc;border-bottom:1px solid var(--bd);flex-wrap:wrap}
-.chg-hd .art{font-size:13px;font-weight:900;color:var(--p);flex:1}
-.vtype{font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px}
-.chg-body{padding:12px 14px}
-.diff-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
-.diff-old{background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px;font-size:13px;line-height:1.6}
-.diff-new{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px;font-size:13px;line-height:1.6}
-.dlbl{font-size:10px;font-weight:900;letter-spacing:1px;margin-bottom:4px}.dlbl.old{color:#dc2626}.dlbl.new{color:#16a34a}
-.law-link{display:inline-flex;align-items:center;gap:5px;padding:5px 10px;background:#eff6ff;border-radius:7px;font-size:11px;font-weight:700;color:#1d4ed8;text-decoration:none;margin-top:8px}
-@media(max-width:480px){.diff-grid{grid-template-columns:1fr}}
-.act-tbl{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
-.act-tbl th{background:#1e293b;color:#fff;padding:9px 12px;font-weight:700;font-size:11px;text-align:left;white-space:nowrap}
-.act-tbl td{padding:9px 12px;border-bottom:1px solid #f1f5f9;vertical-align:top;line-height:1.6}
-.act-tbl tr:hover td{background:#f8fafc}
-.p-urg{background:#fef2f2;color:#dc2626;padding:3px 8px;border-radius:5px;font-size:11px;font-weight:900}
-.p-imp{background:#fffbeb;color:#d97706;padding:3px 8px;border-radius:5px;font-size:11px;font-weight:900}
-.p-nor{background:#f0fdf4;color:#16a34a;padding:3px 8px;border-radius:5px;font-size:11px;font-weight:900}
-.cost-badge{font-size:11px;font-weight:700;padding:2px 7px;border-radius:4px;background:#fef9c3;color:#854d0e}
-.edit-input{border:1px solid var(--bd);border-radius:6px;padding:4px 8px;font-family:'Noto Sans KR',sans-serif;font-size:12px;font-weight:700;color:var(--tx);width:100%;min-width:80px;outline:none}
-.dash-foot{padding:14px 18px;background:#f8fafc;border-top:1px solid var(--bd);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
-.dash-foot span{font-size:11px;color:var(--mu)}
-.area-card{border:1px solid var(--bd);border-radius:10px;margin-bottom:10px;overflow:hidden}
-.area-hd{padding:10px 14px;font-size:13px;font-weight:900;color:#fff;display:flex;align-items:center;gap:8px}
-.area-body{padding:12px 14px}
-.area-item{font-size:13px;line-height:1.8;border-bottom:1px solid #f1f5f9;padding-bottom:8px;margin-bottom:8px}
-.area-item:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.sec-body{padding:4px 18px 18px;display:none}
+/* 변경카드 */
+.chg{background:#fff;border:1px solid var(--bd);border-radius:12px;margin-bottom:10px;overflow:hidden}
+.chg-top{display:flex;align-items:center;gap:8px;padding:12px 14px;background:#f8fafc;border-bottom:1px solid var(--bd);flex-wrap:wrap}
+.chg-art{font-size:13px;font-weight:900;color:var(--p)}
+.badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;white-space:nowrap}
+.b-high{background:#fef2f2;color:#dc2626}.b-mid{background:#fffbeb;color:#d97706}.b-low{background:#f0fdf4;color:#16a34a}
+.b-capex{background:#fce7f3;color:#be185d}.b-prod{background:#fef3c7;color:#92400e}
+.b-cat{background:#eff6ff;color:#1d4ed8}
+.chg-body{padding:14px}
+.chg-row{display:flex;gap:6px;margin-bottom:8px;font-size:13px;line-height:1.6;align-items:flex-start}
+.chg-label{font-size:11px;font-weight:900;color:var(--mu);min-width:60px;flex-shrink:0;padding-top:2px}
+.chg-val{flex:1}
+.risk-box{background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:8px 12px;font-size:12px;color:#991b1b;margin-top:4px}
+.dash-foot{padding:14px 18px;background:#f8fafc;border-top:1px solid var(--bd);font-size:11px;color:var(--mu)}
 </style>
 </head>
 <body>
-<div class="topbar">
-  <div class="logo">📋 환경법령 개정 대응 대시보드</div>
-  <div class="sub">여수국가산업단지 석유화학공장 환경안전팀</div>
-</div>
+<div class="topbar"><div class="logo">📋 환경법령 개정 대응 대시보드</div><div class="sub">여수국가산업단지 석유화학공장 환경안전팀</div></div>
 <div class="wrap">
+<div class="card"><div class="lbl">1. 대상 법령 선택</div><div class="sw"><select id="lawSel" onchange="onLawChange()"><option value="">법령을 선택하세요</option><option value="대기환경보전법">대기환경보전법</option><option value="물환경보전법">물환경보전법</option><option value="화학물질관리법">화학물질관리법</option><option value="화학물질 등록 및 평가법">화학물질 등록 및 평가법</option><option value="산업안전보건법">산업안전보건법</option><option value="위험물안전관리법">위험물안전관리법</option><option value="소음·진동관리법">소음·진동관리법</option><option value="악취방지법">악취방지법</option><option value="토양환경보전법">토양환경보전법</option><option value="환경영향평가법">환경영향평가법</option></select></div></div>
+<div class="card"><div class="lbl">2. 법령 종류 선택</div><div class="type-btns">
+<button class="type-btn active" id="btn-law" onclick="setType('law')"><span class="icon">📜</span><span class="name">법</span><span class="desc">법률 본문</span></button>
+<button class="type-btn" id="btn-decree" onclick="setType('decree')"><span class="icon">📋</span><span class="name">시행령</span><span class="desc">대통령령</span></button>
+<button class="type-btn" id="btn-rule" onclick="setType('rule')"><span class="icon">📄</span><span class="name">시행규칙</span><span class="desc">부령</span></button>
+</div></div>
 <div class="card">
-  <div class="lbl">1. 대상 법령 선택</div>
-  <div class="sw"><select id="lawSel" onchange="onLawChange()">
-    <option value="">법령을 선택하세요</option>
-    <option value="대기환경보전법">대기환경보전법</option>
-    <option value="물환경보전법">물환경보전법</option>
-    <option value="화학물질관리법">화학물질관리법</option>
-    <option value="화학물질 등록 및 평가법">화학물질 등록 및 평가법</option>
-    <option value="산업안전보건법">산업안전보건법</option>
-    <option value="위험물안전관리법">위험물안전관리법</option>
-    <option value="소음·진동관리법">소음·진동관리법</option>
-    <option value="악취방지법">악취방지법</option>
-    <option value="토양환경보전법">토양환경보전법</option>
-    <option value="환경영향평가법">환경영향평가법</option>
-  </select></div>
+<div class="srow"><div class="dot" id="dot"></div><span id="gasMsg">법령 선택 후 자동 조회</span></div>
+<div class="lbl">3. 시행일자 선택</div>
+<div class="sw"><select id="dateSel" disabled><option value="">법령 및 종류를 먼저 선택하세요</option></select></div>
+<div class="msg err" id="errBox"></div><div class="msg warn" id="warnBox"></div>
+<button class="debug-btn" id="debugBtn" style="display:none" onclick="runDebug()">🔍 API 진단</button>
+<div class="debug-panel" id="debugPanel"></div>
 </div>
-<div class="card">
-  <div class="lbl">2. 법령 종류 선택</div>
-  <div class="type-btns">
-    <button class="type-btn active" id="btn-law" onclick="setType('law')"><span class="icon">📜</span><span class="name">법</span><span class="desc">법률 본문</span></button>
-    <button class="type-btn" id="btn-decree" onclick="setType('decree')"><span class="icon">📋</span><span class="name">시행령</span><span class="desc">대통령령</span></button>
-    <button class="type-btn" id="btn-rule" onclick="setType('rule')"><span class="icon">📄</span><span class="name">시행규칙</span><span class="desc">부령</span></button>
-  </div>
-</div>
-<div class="card">
-  <div class="srow"><div class="dot" id="dot"></div><span id="gasMsg">법령 선택 후 자동 조회</span></div>
-  <div class="lbl">3. 시행일자 선택</div>
-  <div class="sw"><select id="dateSel" disabled><option value="">법령 및 종류를 먼저 선택하세요</option></select></div>
-  <div class="msg err" id="errBox"></div>
-  <div class="msg warn" id="warnBox"></div>
-  <button class="debug-btn" id="debugBtn" style="display:none" onclick="runDebug()">🔍 API 진단 실행</button>
-  <div class="debug-panel" id="debugPanel"></div>
-</div>
-<div class="cache-badge" id="cacheBadge">⚡ 저장된 결과 불러오기</div>
+<div class="cache-badge" id="cacheBadge">⚡ 캐시 불러오기</div>
 <button class="run-btn" id="runBtn" onclick="run()">⚡ 개정 내용 분석 실행</button>
 <div class="step" id="stepBox"></div>
 <div class="dash" id="dash" style="display:none">
-  <div class="dash-head"><h2 id="dTitle"></h2><div class="dash-tags" id="dTags"></div><div class="cmp" id="dCmp"></div></div>
-  <div class="db-act">
-    <button class="ab" onclick="window.print()">🖨️ 인쇄</button>
-    <button class="ab" onclick="expandAll()">📂 전체 펼치기</button>
-    <button class="ab" onclick="collapseAll()">📁 전체 접기</button>
-    <button class="ab" onclick="saveInputs()">💾 내부담당 저장</button>
-  </div>
-  <div id="dashBody"></div>
-  <div class="dash-foot"><div style="display:flex;gap:14px;flex-wrap:wrap"><span id="dModel"></span><span id="dTime"></span></div></div>
+<div class="dash-head"><h2 id="dTitle"></h2><div class="dash-tags" id="dTags"></div><div class="cmp" id="dCmp"></div></div>
+<div class="db-act"><button class="ab" onclick="window.print()">🖨️ 인쇄</button><button class="ab" onclick="expandAll()">📂 전체 펼치기</button><button class="ab" onclick="collapseAll()">📁 전체 접기</button></div>
+<div id="dashBody"></div>
+<div class="dash-foot"><span id="dModel"></span> &nbsp; <span id="dTime"></span></div>
 </div>
 </div>
 <script>
-var GAS="https://script.google.com/macros/s/AKfycbxrwVN3J9zm1pj3vdZ0lgTmJMLXcywW4EP7zfFkTI_xIBleBR_HK6MeSzIvaNCdjh-BPQ/exec";
+var GAS="https://script.google.com/macros/s/AKfycbyKtU9du4kCVHw-afB-RhE3_r9Z-48MspnSMYs5QOimtq-gPmfZtE2aL45ARvzoiku5uA/exec";
 var lawName="",lawType="law",allDates=[],mstMap={};
-
 function jsonp(p,cb,ms){return new Promise(function(res,rej){var old=document.getElementById("__"+cb);if(old)old.remove();var t=setTimeout(function(){delete window[cb];rej(new Error("응답없음("+ms/1000+"초)"));},ms);window[cb]=function(d){clearTimeout(t);delete window[cb];res(d);};var s=document.createElement("script");s.id="__"+cb;s.src=GAS+"?"+new URLSearchParams(p).toString();s.onerror=function(){clearTimeout(t);delete window[cb];rej(new Error("GAS 연결 실패"));};document.body.appendChild(s);});}
-
 function setType(t){lawType=t;["law","decree","rule"].forEach(function(k){document.getElementById("btn-"+k).classList.toggle("active",k===t);});if(lawName)loadDates();}
 function onLawChange(){lawName=document.getElementById("lawSel").value;allDates=[];mstMap={};document.getElementById("dateSel").innerHTML="<option>선택하세요</option>";document.getElementById("dateSel").disabled=true;document.getElementById("cacheBadge").classList.remove("show");document.getElementById("debugPanel").classList.remove("show");document.getElementById("debugBtn").style.display="none";hideMsg("warnBox");hideMsg("errBox");if(lawName)loadDates();}
-
-async function loadDates(){
-  var sel=document.getElementById("dateSel");hideMsg("errBox");hideMsg("warnBox");
-  sel.disabled=true;sel.innerHTML="<option>조회 중...</option>";setDot("ing","API 조회 중...");
-  try{
-    var d=await jsonp({action:"dates",lawName:lawName,lawType:lawType,callback:"__cbd"},"__cbd",30000);
-    if(d.error){setDot("err","오류");sel.innerHTML="<option>오류</option>";showErr(d.error);showDebugBtn();return;}
-    if(d.debug){var wp=document.getElementById("warnBox");wp.innerHTML="<b>서버:</b> "+esc(d.debug);wp.classList.add("show");}
-    if(!d.dates||!d.dates.length){setDot("ok","연결됨 — 시행일 0건");sel.innerHTML="<option value=''>시행일 없음</option>";showDebugBtn();return;}
-    allDates=d.dates;mstMap=d.mstMap||{};
-    setDot("ok","연결됨 ✓ — "+d.dates.length+"건");
-    sel.innerHTML="<option value=''>시행일을 선택하세요 ("+d.dates.length+"건)</option>"+d.dates.map(function(x){return'<option value="'+x+'">'+x.slice(0,4)+"년 "+x.slice(4,6)+"월 "+x.slice(6,8)+"일 시행분</option>";}).join("");
-    sel.disabled=false;sel.onchange=checkCache;
-    if(d.dates.length<=2)showDebugBtn();else document.getElementById("debugBtn").style.display="none";
-  }catch(ex){setDot("err","실패");sel.innerHTML="<option>실패</option>";showErr(ex.message);showDebugBtn();}
-}
-
+async function loadDates(){var sel=document.getElementById("dateSel");hideMsg("errBox");hideMsg("warnBox");sel.disabled=true;sel.innerHTML="<option>조회 중...</option>";setDot("ing","조회 중...");
+try{var d=await jsonp({action:"dates",lawName:lawName,lawType:lawType,callback:"__cbd"},"__cbd",30000);
+if(d.error){setDot("err","오류");sel.innerHTML="<option>오류</option>";showErr(d.error);showDebugBtn();return;}
+if(d.debug){document.getElementById("warnBox").innerHTML="<b>서버:</b> "+esc(d.debug);document.getElementById("warnBox").classList.add("show");}
+if(!d.dates||!d.dates.length){setDot("ok","연결됨 — 0건");sel.innerHTML="<option>시행일 없음</option>";showDebugBtn();return;}
+allDates=d.dates;mstMap=d.mstMap||{};setDot("ok","연결됨 ✓ — "+d.dates.length+"건");
+sel.innerHTML="<option value=''>시행일 선택 ("+d.dates.length+"건)</option>"+d.dates.map(function(x){return'<option value="'+x+'">'+x.slice(0,4)+"년 "+x.slice(4,6)+"월 "+x.slice(6,8)+"일 시행분</option>";}).join("");
+sel.disabled=false;sel.onchange=checkCache;if(d.dates.length<=2)showDebugBtn();else document.getElementById("debugBtn").style.display="none";
+}catch(ex){setDot("err","실패");sel.innerHTML="<option>실패</option>";showErr(ex.message);showDebugBtn();}}
 function showDebugBtn(){document.getElementById("debugBtn").style.display="inline-block";}
-async function runDebug(){
-  var panel=document.getElementById("debugPanel");
-  panel.innerHTML="<span style='color:#60a5fa'>data.go.kr + law.go.kr 동시 테스트 중...</span>";panel.classList.add("show");
-  try{
-    var d=await jsonp({action:"debug",callback:"__cbdbg"},"__cbdbg",60000);
-    panel.innerHTML="<pre style='white-space:pre-wrap;color:#e2e8f0'>"+esc(JSON.stringify(d,null,2))+"</pre>";
-  }catch(ex){panel.innerHTML="<span style='color:#f87171'>타임아웃: "+esc(ex.message)+"</span>";}
-}
-
-function checkCache(){var date=document.getElementById("dateSel").value;if(!date)return;var key=cacheKey(lawName,lawType,date);var badge=document.getElementById("cacheBadge");var cached=getCached(key);if(cached){badge.classList.add("show");badge.onclick=function(){renderAll(cached,true);};}else badge.classList.remove("show");}
-
-async function run(){
-  if(!lawName){alert("법령을 선택하세요");return;}var date=document.getElementById("dateSel").value;if(!date){alert("시행일을 선택하세요");return;}
-  var btn=document.getElementById("runBtn"),step=document.getElementById("stepBox");
-  btn.disabled=true;btn.innerHTML='<div class="spin"></div>&ensp;분석 중...';document.getElementById("dash").style.display="none";
-  step.classList.add("show");step.textContent="🤖 AI 분석 중... (최대 120초)";
-  try{var lawId=mstMap[date]||"";var d=await jsonp({action:"analyze",id:lawId,date:date,lawName:lawName,lawType:lawType,allDates:JSON.stringify(allDates),callback:"__cba"},"__cba",120000);
-    if(d.error)throw new Error(d.error);if(!d.data)throw new Error("분석 결과 없음");
-    saveCache(cacheKey(lawName,lawType,date),{result:d,lawName:lawName,lawType:lawType,date:date});renderAll(d,false);
-  }catch(ex){alert("오류: "+ex.message);}
-  finally{btn.disabled=false;btn.innerHTML="⚡ 개정 내용 분석 실행";step.classList.remove("show");}
-}
+async function runDebug(){var p=document.getElementById("debugPanel");p.innerHTML="<span style='color:#60a5fa'>테스트 중...</span>";p.classList.add("show");try{var d=await jsonp({action:"debug",lawName:lawName,lawType:lawType,callback:"__cbdbg"},"__cbdbg",60000);p.innerHTML="<pre style='white-space:pre-wrap;color:#e2e8f0'>"+esc(JSON.stringify(d,null,2))+"</pre>";}catch(ex){p.innerHTML="<span style='color:#f87171'>"+esc(ex.message)+"</span>";}}
+function checkCache(){var dt=document.getElementById("dateSel").value;if(!dt)return;var c=getCached("p_"+lawName+"_"+lawType+"_"+dt);var b=document.getElementById("cacheBadge");if(c){b.classList.add("show");b.onclick=function(){renderAll(c,true);};}else b.classList.remove("show");}
+async function run(){if(!lawName){alert("법령 선택");return;}var dt=document.getElementById("dateSel").value;if(!dt){alert("시행일 선택");return;}
+var btn=document.getElementById("runBtn"),step=document.getElementById("stepBox");btn.disabled=true;btn.innerHTML='<div class="spin"></div>&ensp;분석 중...';document.getElementById("dash").style.display="none";step.classList.add("show");step.textContent="🤖 AI 분석 중... (최대 120초)";
+try{var d=await jsonp({action:"analyze",id:mstMap[dt]||"",date:dt,lawName:lawName,lawType:lawType,allDates:JSON.stringify(allDates),callback:"__cba"},"__cba",120000);
+if(d.error)throw new Error(d.error);if(!d.data)throw new Error("결과 없음");
+try{localStorage.setItem("p_"+lawName+"_"+lawType+"_"+dt,JSON.stringify({result:d,lawName:lawName,lawType:lawType,date:dt}));}catch(e){}
+renderAll(d,false);}catch(ex){alert("오류: "+ex.message);}
+finally{btn.disabled=false;btn.innerHTML="⚡ 개정 내용 분석 실행";step.classList.remove("show");}}
 
 function renderAll(d,fromCache){
-  var data=d.result?d.result:d;var ln=d.lawName||lawName,lt=d.lawType||lawType;
-  var dt=d.date||document.getElementById("dateSel").value;
-  var typeLabel=lt==="decree"?"시행령":lt==="rule"?"시행규칙":"법률";
-  var df=dt.slice(0,4)+"-"+dt.slice(4,6)+"-"+dt.slice(6,8);
-  document.getElementById("dTitle").textContent=ln+" "+typeLabel+" — 개정 대응 보고서";
-  var tags='<span class="tag t-d">📅 '+df+' 시행</span>';
-  if(data.prevDate)tags+='<span class="tag t-p">↩ 이전: '+data.prevDateFmt+'</span>';
-  tags+=data.hasSource?'<span class="tag t-s">✅ 원문기반</span>':'<span class="tag t-w">⚠️ 추정포함</span>';
-  if(data.tokens)tags+='<span class="tag t-k">'+data.tokens.toLocaleString()+'토큰</span>';
-  if(fromCache)tags+='<span class="tag t-s">⚡ 캐시</span>';
-  document.getElementById("dTags").innerHTML=tags;
-  var cmp=document.getElementById("dCmp");
-  if(data.prevDate){cmp.innerHTML='<span class="lv">비교기준</span><span class="pv">'+data.prevDateFmt+'</span><span class="ar">→</span><span class="cv">'+df+'</span>';cmp.style.display="flex";}else cmp.style.display="none";
-  var pd=data.data||data;
-  document.getElementById("dashBody").innerHTML=renderSummary(pd)+renderChanges(pd,ln,lt)+renderActions(pd)+renderAreaAnalysis(pd);
-  document.getElementById("dModel").textContent="모델: Groq llama-3.3-70b";
-  document.getElementById("dTime").textContent=new Date().toLocaleString("ko-KR",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"});
-  document.getElementById("dash").style.display="block";loadInputs(dt,lt);
-  setTimeout(function(){document.getElementById("dash").scrollIntoView({behavior:"smooth",block:"start"});},100);
-}
+var data=d.result?d.result:d;var ln=d.lawName||lawName,lt=d.lawType||lawType;
+var dt=d.date||document.getElementById("dateSel").value;
+var tl=lt==="decree"?"시행령":lt==="rule"?"시행규칙":"법률";
+var df=dt.slice(0,4)+"-"+dt.slice(4,6)+"-"+dt.slice(6,8);
+document.getElementById("dTitle").textContent=ln+" "+tl+" — 개정 대응 보고서";
+var tags='<span class="tag t-d">📅 '+df+' 시행</span>';
+tags+=data.hasSource?'<span class="tag t-s">✅ 원문기반</span>':'<span class="tag t-w">⚠️ 추정포함</span>';
+if(fromCache)tags+='<span class="tag t-s">⚡ 캐시</span>';
+document.getElementById("dTags").innerHTML=tags;
+var cmp=document.getElementById("dCmp");
+if(data.prevDate){cmp.innerHTML='<span class="pv">'+data.prevDateFmt+'</span><span class="ar">→</span><span class="cv">'+df+'</span>';cmp.style.display="flex";}else cmp.style.display="none";
+var pd=data.data||data;
+document.getElementById("dashBody").innerHTML=renderTop3(pd)+renderCatGrid(pd)+renderChanges(pd);
+document.getElementById("dModel").textContent="Groq llama-3.3-70b";
+document.getElementById("dTime").textContent=new Date().toLocaleString("ko-KR",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"});
+document.getElementById("dash").style.display="block";
+setTimeout(function(){document.getElementById("dash").scrollIntoView({behavior:"smooth"});},100);}
 
-function renderSummary(d){
-  var s=d.summary||{본문:{단순변경:0,조치필요:0},부칙:{단순변경:0,조치필요:0},별표서식:{단순변경:0,조치필요:0}};
-  var cats=["본문","부칙","별표서식"],t1=0,t2=0,rows="";
-  cats.forEach(function(c){var sc=s[c]||{단순변경:0,조치필요:0};var n1=sc["단순변경"]||0,n2=sc["조치필요"]||0;t1+=n1;t2+=n2;
-    rows+='<tr><td class="row-hd">'+c+'</td><td>'+mkCnt(n1,"simple","단순변경",c)+'</td><td>'+mkCnt(n2,"action","조치필요",c)+'</td><td><b>'+(n1+n2)+'</b></td></tr>';});
-  return secWrap("1","n1","변경사항 요약",'<table class="sum-tbl"><thead><tr><th>구분</th><th>단순변경</th><th>조치필요</th><th>합계</th></tr></thead><tbody>'+rows+'<tr class="total-row"><td class="row-hd">합계</td><td><b>'+t1+'</b></td><td><b>'+t2+'</b></td><td><b>'+(t1+t2)+'</b></td></tr></tbody></table><div class="detail-panel" id="dp-filter"></div>',true);
-}
-function mkCnt(n,cls,type,cat){return n===0?'<span class="cnt-btn zero">0</span>':'<button class="cnt-btn '+cls+'" onclick="filterChanges(\''+type+'\',\''+cat+'\')">'+n+'</button>';}
+function renderTop3(d){
+var t=d.top3||[];if(!t.length)return'';
+var h='<div class="top3"><h3>🚨 우선 조치 TOP 3</h3>';
+t.forEach(function(x){h+='<div class="top3-item"><div class="top3-rank">'+x.순위+'</div><div class="top3-body"><div class="top3-task">'+esc(x.과제)+'</div><div class="top3-reason">'+esc(x.이유||"")+'</div></div></div>';});
+return h+'</div>';}
 
-function renderChanges(d,ln,lt){
-  var ch=d.changes||[];if(!ch.length)return secWrap("2","n2","조항별 변경 상세","<p style='color:#94a3b8;padding:8px 0'>없음</p>",false);
-  var h='';ch.forEach(function(c){
-    var vt=c.변경유형==="기준강화"?"강화":c.변경유형==="기준완화"?"완화":c.변경유형==="신규규정"?"신규":c.변경유형==="삭제"?"삭제":c.변경유형==="조직변경"?"조직":"수정";
-    h+='<div class="chg-card" data-type="'+c.유형+'" data-cat="'+(c.구분||"")+'"><div class="chg-hd"><span class="art">'+(c.조항||"")+(c.조항명?" — "+c.조항명:"")+'</span><span class="vtype" style="background:'+(vt==="강화"?"#fef2f2;color:#dc2626":vt==="완화"?"#f0fdf4;color:#16a34a":"#f8fafc;color:#64748b")+'">'+(c.변경유형||"")+'</span><span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;margin-left:4px;'+(c.유형==="조치필요"?"background:#fef2f2;color:#dc2626":"background:#dbeafe;color:#1d4ed8")+'">'+c.유형+'</span>'+(c.영향분야?'<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:4px;margin-left:4px;background:#f5f3ff;color:#6d28d9">'+esc(c.영향분야)+'</span>':'')+'</div><div class="chg-body"><div class="diff-grid"><div class="diff-old"><div class="dlbl old">▲ 변경 전</div>'+(c.변경전||"신규")+'</div><div class="diff-new"><div class="dlbl new">▼ 변경 후</div>'+(c.변경후||"-")+'</div></div></div></div>';
-  });return secWrap("2","n2","조항별 변경 상세",h,false);
-}
+function renderCatGrid(d){
+var s=d.summary||{};
+var cats=[{k:"배출기준",icon:"🏭",color:"#dc2626"},{k:"설비",icon:"⚙️",color:"#7c3aed"},{k:"서류인허가",icon:"📝",color:"#2563eb"},{k:"운영관리",icon:"📋",color:"#d97706"}];
+var h='<div class="cat-grid">';
+cats.forEach(function(c){var v=s[c.k]||{건수:0,높음:0};
+h+='<div class="cat-card"><span class="cat-icon">'+c.icon+'</span><span class="cat-name">'+c.k+'</span><div class="cat-cnt" style="color:'+c.color+'">'+v.건수+'</div>'+(v.높음?'<span class="cat-urg">긴급 '+v.높음+'건</span>':'')+'</div>';});
+return h+'</div>';}
 
-function renderActions(d){
-  var a=d.actions||[];if(!a.length)return secWrap("3","n3","현장 실행 과제","<p style='color:#94a3b8;padding:8px 0'>없음</p>",true);
-  var ord={"긴급":0,"중요":1,"일반":2};a.sort(function(x,y){return(ord[x.우선순위]||2)-(ord[y.우선순위]||2);});
-  var rows=a.map(function(x,i){var pc=x.우선순위==="긴급"?"p-urg":x.우선순위==="중요"?"p-imp":"p-nor";
-    return'<tr><td><span class="'+pc+'">'+x.우선순위+'</span></td><td style="font-weight:700">'+esc(x.과제||"")+'</td><td style="font-size:12px;color:var(--p)">'+esc(x.근거조항||"")+'</td><td style="font-size:12px">'+esc(x.완료기한||"")+'</td><td>'+(x.비용유형&&x.비용유형!=="없음"?'<span class="cost-badge">'+esc(x.비용유형)+'</span>':"—")+'</td><td style="font-size:12px">'+esc(x.제출처||"—")+'</td><td><input class="edit-input dept-input" data-idx="'+i+'" placeholder="입력"></td></tr>';}).join("");
-  return secWrap("3","n3","현장 실행 과제",'<div style="overflow-x:auto"><table class="act-tbl"><thead><tr><th>우선순위</th><th>과제</th><th>근거조항</th><th>완료기한</th><th>비용유형</th><th>제출처</th><th>내부담당 ✏️</th></tr></thead><tbody>'+rows+'</tbody></table></div>',true);
-}
+function renderChanges(d){
+var ch=d.changes||[];if(!ch.length)return secWrap("1","변경 상세","<p style='color:#94a3b8;padding:8px'>변경사항 없음</p>",true);
+var catOrder=["배출기준","설비","서류인허가","운영관리","기타"];
+var grouped={};ch.forEach(function(c){var g=c.구분||"기타";if(!grouped[g])grouped[g]=[];grouped[g].push(c);});
+var h='';
+catOrder.forEach(function(cat){
+if(!grouped[cat])return;
+var items=grouped[cat];
+var catColors={"배출기준":"#dc2626","설비":"#7c3aed","서류인허가":"#2563eb","운영관리":"#d97706","기타":"#64748b"};
+h+='<div style="margin-bottom:16px"><div style="font-size:13px;font-weight:900;color:'+catColors[cat]+';margin-bottom:8px;display:flex;align-items:center;gap:6px"><span style="width:4px;height:16px;background:'+catColors[cat]+';border-radius:2px"></span>'+cat+' ('+items.length+'건)</div>';
+items.forEach(function(c){
+var urgCls=c.긴급도==="높음"?"b-high":c.긴급도==="중간"?"b-mid":"b-low";
+h+='<div class="chg"><div class="chg-top"><span class="chg-art">'+(c.조항||"")+'</span><span class="badge '+urgCls+'">'+(c.긴급도||"")+'</span><span class="badge b-cat">'+(c.구분||"")+'</span>';
+if(c.CAPEX)h+='<span class="badge b-capex">💰 CAPEX</span>';
+if(c.생산영향)h+='<span class="badge b-prod">⚠️ 생산영향</span>';
+h+='</div><div class="chg-body">';
+if(c.변경내용)h+='<div class="chg-row"><span class="chg-label">변경</span><div class="chg-val"><b>'+esc(c.변경내용)+'</b></div></div>';
+if(c.영향설비)h+='<div class="chg-row"><span class="chg-label">설비</span><div class="chg-val">'+esc(c.영향설비)+'</div></div>';
+if(c.조치사항)h+='<div class="chg-row"><span class="chg-label">조치</span><div class="chg-val" style="color:var(--p);font-weight:700">'+esc(c.조치사항)+'</div></div>';
+h+='<div class="chg-row"><span class="chg-label">담당</span><div class="chg-val">'+esc(c.담당||"")+(c.기한?' · <b>기한: '+esc(c.기한)+'</b>':'')+'</div></div>';
+if(c.리스크)h+='<div class="risk-box">⚠️ '+esc(c.리스크)+'</div>';
+h+='</div></div>';});
+h+='</div>';});
+return secWrap("1","변경 상세 ("+ch.length+"건)",h,true);}
 
-function renderAreaAnalysis(d){
-  var ch=d.changes||[];var ac=ch.filter(function(c){return c.유형==="조치필요";});
-  if(!ac.length)return secWrap("4","n4","영향분야별 분석","<p style='color:#94a3b8;padding:8px 0'>없음</p>",false);
-  var g={};ac.forEach(function(c){var a=c.영향분야||"기타";if(!g[a])g[a]=[];g[a].push(c);});
-  var colors={"배출허용기준":"#dc2626","측정의무":"#d97706","인허가":"#7c3aed","보고의무":"#2563eb","과태료":"#0891b2","시설기준":"#059669","물질지정":"#be185d","기타":"#64748b"};
-  var icons={"배출허용기준":"🏭","측정의무":"📊","인허가":"📝","보고의무":"📋","과태료":"💰","시설기준":"⚙️","물질지정":"🧪","기타":"📌"};
-  var h="";Object.keys(g).forEach(function(a){var items=g[a];
-    h+='<div class="area-card"><div class="area-hd" style="background:'+(colors[a]||"#64748b")+'">'+(icons[a]||"📌")+' '+a+' ('+items.length+'건)</div><div class="area-body">'+
-    items.map(function(c){return'<div class="area-item"><span style="font-weight:700;color:var(--p)">'+esc(c.조항||"")+'</span>'+(c.조항명?' — '+esc(c.조항명):'')+'<br><span style="font-size:12px;color:#475569">'+esc(c.변경후||"")+'</span>'+(c.기한&&c.기한!=="시행일"?'<br><span style="font-size:11px;color:#dc2626;font-weight:700">⏰ '+esc(c.기한)+'</span>':'')+'</div>';}).join("")+'</div></div>';});
-  return secWrap("4","n4","영향분야별 분석",h,true);
-}
-
-function secWrap(n,c,t,ct,o){return'<div class="sec"><div class="sec-hd" onclick="toggleSec(this)"><span class="sec-num '+c+'">'+n+'</span><span class="sec-title">'+t+'</span><span class="sec-arr '+(o?"open":"")+'">▼</span></div><div class="sec-body" style="'+(o?"display:block":"display:none")+'">'+ct+'</div></div>';}
-function filterChanges(type,cat){var dp=document.getElementById("dp-filter");var cards=document.querySelectorAll(".chg-card");var h="<b style='font-size:12px;color:var(--p);display:block;margin-bottom:10px'>"+cat+" · "+type+"</b>";var f=false;cards.forEach(function(c){if(c.dataset.type===type&&c.dataset.cat===cat){h+=c.outerHTML;f=true;}});if(!f)h+="<p style='color:#94a3b8'>없음</p>";dp.innerHTML=h;dp.classList.add("show");}
-
-function cacheKey(ln,lt,dt){return"petro_"+ln+"_"+lt+"_"+dt;}
-function saveCache(k,d){try{localStorage.setItem(k,JSON.stringify(d));}catch(e){}}
-function getCached(k){try{var v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch(e){return null;}}
-function saveInputs(){var date=document.getElementById("dateSel").value;if(!date)return;var inputs=document.querySelectorAll(".dept-input"),vals={};inputs.forEach(function(el){vals[el.dataset.idx]=el.value;});localStorage.setItem("dept_"+cacheKey(lawName,lawType,date),JSON.stringify(vals));alert("저장완료");}
-function loadInputs(dt,lt){try{var v=localStorage.getItem("dept_"+cacheKey(lawName,lt||lawType,dt));if(!v)return;var vals=JSON.parse(v);document.querySelectorAll(".dept-input").forEach(function(el){if(vals[el.dataset.idx])el.value=vals[el.dataset.idx];});}catch(e){}}
-function toggleSec(hd){var b=hd.nextElementSibling,a=hd.querySelector(".sec-arr");var o=b.style.display!=="none";b.style.display=o?"none":"block";a.classList.toggle("open",!o);}
+function secWrap(n,t,ct,o){return'<div class="sec"><div class="sec-hd" onclick="toggleSec(this)"><span class="sec-num" style="background:#1e293b">'+n+'</span><span class="sec-title">'+t+'</span><span class="sec-arr '+(o?"open":"")+'">▼</span></div><div class="sec-body" style="'+(o?"display:block":"display:none")+'">'+ct+'</div></div>';}
+function toggleSec(h){var b=h.nextElementSibling,a=h.querySelector(".sec-arr");var o=b.style.display!=="none";b.style.display=o?"none":"block";a.classList.toggle("open",!o);}
 function expandAll(){document.querySelectorAll(".sec-body").forEach(function(b){b.style.display="block";});document.querySelectorAll(".sec-arr").forEach(function(a){a.classList.add("open");});}
 function collapseAll(){document.querySelectorAll(".sec-body").forEach(function(b){b.style.display="none";});document.querySelectorAll(".sec-arr").forEach(function(a){a.classList.remove("open");});}
+function getCached(k){try{var v=localStorage.getItem(k);return v?JSON.parse(v):null;}catch(e){return null;}}
 function setDot(s,m){document.getElementById("dot").className="dot "+s;document.getElementById("gasMsg").textContent=m;}
-function showErr(h){var e=document.getElementById("errBox");e.innerHTML=h;e.classList.add("show");}
+function showErr(h){document.getElementById("errBox").innerHTML=h;document.getElementById("errBox").classList.add("show");}
 function hideMsg(id){document.getElementById(id).classList.remove("show");}
 function esc(t){return(t||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
 </script>
