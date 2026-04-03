@@ -166,7 +166,7 @@ select:disabled{opacity:.4;cursor:not-allowed}
 </div>
 </div>
 <script>
-var GAS="https://script.google.com/macros/s/AKfycbz6Avom788FKMLITJlxn-0s2uEZ1S5Ns_uNk5wGJ1XqeIZGoYmVt-ydtjBe-62IJEUZmg/exec";
+var GAS="https://script.google.com/macros/s/AKfycbxrwVN3J9zm1pj3vdZ0lgTmJMLXcywW4EP7zfFkTI_xIBleBR_HK6MeSzIvaNCdjh-BPQ/exec";
 var lawName="",lawType="law",allDates=[],mstMap={};
 
 function jsonp(p,cb,ms){return new Promise(function(res,rej){var old=document.getElementById("__"+cb);if(old)old.remove();var t=setTimeout(function(){delete window[cb];rej(new Error("응답없음("+ms/1000+"초)"));},ms);window[cb]=function(d){clearTimeout(t);delete window[cb];res(d);};var s=document.createElement("script");s.id="__"+cb;s.src=GAS+"?"+new URLSearchParams(p).toString();s.onerror=function(){clearTimeout(t);delete window[cb];rej(new Error("GAS 연결 실패"));};document.body.appendChild(s);});}
