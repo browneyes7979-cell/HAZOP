@@ -57,7 +57,7 @@ body.pr .dash>*:not(.reg-s){display:none!important}body.pr .topbar,body.pr .card
 <div class="dash" id="dash" style="display:none"><div class="dash-head"><h2 id="dTitle"></h2><div class="dash-tags" id="dTags"></div><div class="cmp" id="dCmp"></div></div><div class="db-act"><button class="ab" onclick="doPrint()">🖨️ 전체 인쇄</button><button class="ab" onclick="printReg()">📋 법규등록부 인쇄</button></div><div id="dashBody"></div><div class="dash-foot"><span id="dMeta"></span></div></div>
 </div>
 <script>
-var GAS="https://script.google.com/macros/s/AKfycbzUXMKsFK6SAYs3zheMBKULmNwdj7OT2cHoG0cocOX-__2n3VreVQgRoq84xs9Cm1PqtQ/exec";
+var GAS="https://script.google.com/macros/s/AKfycbwP6KejOoGH4JkXRUiCdqOg-37ezF7Z89CIZuiaJDBNX0XUkU1KjxBD6z7u4XIEdErbAw/exec";
 var lawName="",lawType="law",allDates=[],mstMap={};
 function jp(p,cb,ms){return new Promise(function(res,rej){var old=document.getElementById("__"+cb);if(old)old.remove();var t=setTimeout(function(){delete window[cb];rej(new Error("응답없음("+ms/1000+"초)"));},ms);window[cb]=function(d){clearTimeout(t);delete window[cb];res(d);};var s=document.createElement("script");s.id="__"+cb;s.src=GAS+"?"+new URLSearchParams(p).toString();s.onerror=function(){clearTimeout(t);delete window[cb];rej(new Error("GAS연결실패"));};document.body.appendChild(s);});}
 function setType(t){lawType=t;["law","decree","rule"].forEach(function(k){document.getElementById("btn-"+k).classList.toggle("active",k===t);});if(lawName)loadDates();}
