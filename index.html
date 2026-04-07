@@ -171,7 +171,6 @@ async function openAnalysis(name,date,mst){
     meta.textContent=(d.model||"AI")+" · "+now+" · 선택일("+esc(d.selDateFmt||"")+") vs 현행("+esc(d.currentDateFmt||"")+")";
     // 서버에 저장
     try{await jp({action:"saveReport",key:key,data:JSON.stringify({html:html,date:now,model:d.model||"AI"}),callback:"__cbsr"},"__cbsr",10000);}catch(ex){}
-    loadNotices();
   }catch(ex){body.innerHTML='<div class="msg err show">분석 실패: '+esc(ex.message)+'</div>';}
 }
 
