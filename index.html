@@ -79,7 +79,7 @@ select{width:100%;padding:13px 42px 13px 16px;border:1.5px solid var(--bd);borde
 </div>
 <div class="card"><div class="lbl">입법예고 목록</div>
 <p style="font-size:13px;color:var(--mu);margin-bottom:12px">매일 자동 감지된 환경법규 입법예고 목록입니다. 항목을 클릭하면 AI 영향 분석 보고서를 확인할 수 있습니다.</p>
-<div id="noticeLoading" style="text-align:center;color:var(--p);font-weight:700;padding:10px">불러오는 중...</div>
+<div id="noticeLoading" style="text-align:center;color:var(--p);font-weight:700;padding:10px">법제처 데이터 조회 중... (최초 1회 최대 30초)</div>
 </div>
 <div id="recentList"></div>
 </div>
@@ -99,7 +99,7 @@ select{width:100%;padding:13px 42px 13px 16px;border:1.5px solid var(--bd);borde
 </div>
 </div>
 <script>
-var GAS="https://script.google.com/macros/s/AKfycbwLfUuXkn3xeefGcgd1hNNgbopGzJivpraZBJyB0z1Ax8bKPUaqIM26kgCq_fMSYPAFbQ/exec";
+var GAS="https://script.google.com/macros/s/AKfycbzolifi7p9g8wSR1PtinyKK6haoFn_xwGulrbldeDxaqjVKi6JN4OYZ1SJFyKu8X4bwCQ/exec";
 var lawName="",lawType="law",allDates=[],mstMap={},staffData=[];
 
 function switchTab(n){document.getElementById("panel1").style.display=n===1?"block":"none";document.getElementById("panel2").style.display=n===2?"block":"none";document.getElementById("tab1").classList.toggle("active",n===1);document.getElementById("tab2").classList.toggle("active",n===2);if(n===2){loadStaffFromServer();loadNotices();}}
@@ -118,7 +118,7 @@ async function loadNotices(){
   var list=document.getElementById("recentList"),loading=document.getElementById("noticeLoading");
   closeAnalysis();
   try{
-    var d=await jp({action:"recent",callback:"__cbr"},"__cbr",15000);
+    var d=await jp({action:"recent",callback:"__cbr"},"__cbr",60000);
     var items=d.items||[];
     if(loading)loading.style.display="none";
     if(!items.length){list.innerHTML='<div class="card" style="text-align:center;color:var(--mu);padding:30px">감지된 입법예고가 없습니다.<br><span style="font-size:12px">매일 오전 8시 자동 스캔됩니다.</span></div>';return;}
