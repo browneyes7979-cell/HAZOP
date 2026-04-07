@@ -82,16 +82,19 @@ select{width:100%;padding:13px 42px 13px 16px;border:1.5px solid var(--bd);borde
 <div id="noticeLoading" style="text-align:center;color:var(--p);font-weight:700;padding:10px">불러오는 중...</div>
 </div>
 <div id="recentList"></div>
-<div id="analysisPanel" style="display:none">
-<div class="card" style="border:2px solid var(--p)">
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-<div class="lbl" style="margin:0">AI 영향 분석 보고서</div>
-<button onclick="closeAnalysis()" style="border:none;background:#f1f5f9;padding:6px 12px;border-radius:8px;font-family:'Noto Sans KR',sans-serif;font-size:12px;font-weight:700;color:var(--mu);cursor:pointer">✕ 닫기</button>
 </div>
-<div id="analysisTitle" style="font-size:15px;font-weight:900;color:var(--p);margin-bottom:12px"></div>
+</div>
+<!-- 팝업 모달 (Tab2 보고서용) -->
+<div id="analysisModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.6);z-index:9999;overflow-y:auto;padding:20px">
+<div style="max-width:800px;margin:20px auto;background:#fff;border-radius:18px;border:2px solid var(--p);overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.3)">
+<div style="background:linear-gradient(135deg,#0f172a,#1e3a5f);padding:16px 20px;display:flex;justify-content:space-between;align-items:center">
+<div style="color:#fff;font-size:16px;font-weight:900">📋 AI 영향 분석 보고서</div>
+<button onclick="closeAnalysis()" style="border:none;background:rgba(255,255,255,.15);color:#fff;padding:8px 16px;border-radius:8px;font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:700;cursor:pointer">✕ 닫기</button>
+</div>
+<div style="padding:20px">
+<div id="analysisTitle" style="font-size:16px;font-weight:900;color:var(--p);margin-bottom:14px"></div>
 <div id="analysisBody"></div>
-<div id="analysisMeta" style="font-size:11px;color:var(--mu);margin-top:12px"></div>
-</div>
+<div id="analysisMeta" style="font-size:11px;color:var(--mu);margin-top:14px;padding-top:12px;border-top:1px solid var(--bd)"></div>
 </div>
 </div>
 </div>
@@ -132,7 +135,7 @@ async function loadNotices(){
 
 // ── AI 영향 분석 (서버 캐시 우선, 선택일 vs 현행 비교) ─
 async function openAnalysis(name,date,mst){
-  var panel=document.getElementById("analysisPanel");
+  var panel=document.getElementById("analysisModal");
   var body=document.getElementById("analysisBody");
   var title=document.getElementById("analysisTitle");
   var meta=document.getElementById("analysisMeta");
@@ -142,12 +145,19 @@ async function openAnalysis(name,date,mst){
   body.innerHTML='<div style="text-align:center;padding:20px;color:var(--mu)">보고서 확인 중...</div>';
   meta.textContent="";
   panel.scrollIntoView({behavior:"smooth"});
-  // 1순위: 서버 캐시 확인
+  // 1순위: localStorage 캐시 (즉시, 확실)
+  var lsKey="rpt_"+key;
+  try{
+    var ls=localStorage.getItem(lsKey);
+    if(ls){var c=JSON.parse(ls);body.innerHTML=c.html;meta.textContent="💾 저장된 보고서 · "+c.date+" · "+c.model;return;}
+  }catch(ex){}
+  // 2순위: 서버 캐시
   try{
     var cached=await jp({action:"getReport",key:key,callback:"__cbgr"},"__cbgr",10000);
     if(cached.report){
       body.innerHTML=cached.report.html;
-      meta.textContent="💾 서버 저장 보고서 · "+cached.report.date+" · "+cached.report.model;
+      meta.textContent="💾 서버 보고서 · "+cached.report.date+" · "+cached.report.model;
+      try{localStorage.setItem(lsKey,JSON.stringify(cached.report));}catch(ex){}
       return;
     }
   }catch(ex){}
@@ -169,12 +179,14 @@ async function openAnalysis(name,date,mst){
     body.innerHTML=html;
     var now=new Date().toLocaleString("ko-KR",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"});
     meta.textContent=(d.model||"AI")+" · "+now+" · 선택일("+esc(d.selDateFmt||"")+") vs 현행("+esc(d.currentDateFmt||"")+")";
-    // 서버에 저장
-    try{await jp({action:"saveReport",key:key,data:JSON.stringify({html:html,date:now,model:d.model||"AI"}),callback:"__cbsr"},"__cbsr",10000);}catch(ex){}
+    // localStorage 저장 (확실) + 서버 저장 (팀 공유)
+    var saveData=JSON.stringify({html:html,date:now,model:d.model||"AI"});
+    try{localStorage.setItem(lsKey,saveData);}catch(ex){}
+    try{await jp({action:"saveReport",key:key,data:saveData,callback:"__cbsr"},"__cbsr",10000);}catch(ex){}
   }catch(ex){body.innerHTML='<div class="msg err show">분석 실패: '+esc(ex.message)+'</div>';}
 }
 
-function closeAnalysis(){document.getElementById("analysisPanel").style.display="none";}
+function closeAnalysis(){document.getElementById("analysisModal").style.display="none";}
 
 // ── 입법예고 보고서 렌더링 (Tab1과 독립) ────────────
 function renderReport(pd,d){
