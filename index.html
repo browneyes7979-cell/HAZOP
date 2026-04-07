@@ -99,7 +99,7 @@ select{width:100%;padding:13px 42px 13px 16px;border:1.5px solid var(--bd);borde
 </div>
 </div>
 <script>
-var GAS="https://script.google.com/macros/s/AKfycby8Yq7IUQaTCP3drxiiMdHfUfwWRCEXiI9FdywaXdyZvI02y8Q8A5AaSFf149p7dU0BEw/exec";
+var GAS="https://script.google.com/macros/s/AKfycbwLfUuXkn3xeefGcgd1hNNgbopGzJivpraZBJyB0z1Ax8bKPUaqIM26kgCq_fMSYPAFbQ/exec";
 var lawName="",lawType="law",allDates=[],mstMap={},staffData=[];
 
 function switchTab(n){document.getElementById("panel1").style.display=n===1?"block":"none";document.getElementById("panel2").style.display=n===2?"block":"none";document.getElementById("tab1").classList.toggle("active",n===1);document.getElementById("tab2").classList.toggle("active",n===2);if(n===2){loadStaffFromServer();loadNotices();}}
@@ -122,10 +122,13 @@ async function loadNotices(){
     var items=d.items||[];
     if(loading)loading.style.display="none";
     if(!items.length){list.innerHTML='<div class="card" style="text-align:center;color:var(--mu);padding:30px">감지된 입법예고가 없습니다.<br><span style="font-size:12px">매일 오전 8시 자동 스캔됩니다.</span></div>';return;}
-    var h="";items.forEach(function(x){
-      h+='<div class="rc" style="cursor:pointer" onclick="openAnalysis(\''+esc(x.법령명||"")+'\',\''+esc(x.시행일||"")+'\',\''+esc(x.MST||"")+'\')">'
+    var h="";var today=new Date().toISOString().slice(0,10);items.forEach(function(x){
+      var isFuture=(x.시행일||"")>today;
+      var dateBadge=isFuture?'<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;background:#fef2f2;color:#dc2626">🔜 시행예정</span>':'<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;background:#f0fdf4;color:#16a34a">✅ 시행중</span>';
+      h+='<div class="rc" style="cursor:pointer;border-color:'+(isFuture?'#fecaca':'var(--bd)')+'" onclick="openAnalysis(\''+esc(x.법령명||"")+'\',\''+esc(x.시행일||"")+'\',\''+esc(x.MST||"")+'\')">'
         +'<span class="rc-nm">'+esc(x.법령명||"")+'</span>'
         +'<span class="rc-dt">📅 '+esc(x.시행일||"")+'</span>'
+        +dateBadge
         +(x.감지일?'<span style="font-size:10px;color:var(--mu)">감지: '+esc(x.감지일)+'</span>':'')
         +'<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;background:#eff6ff;color:#1d4ed8">📄 보고서 보기</span></div>';
     });
@@ -174,6 +177,7 @@ async function openAnalysis(name,date,mst){
     // 선택일 vs 현행 비교 분석
     var d=await jp({action:"analyze",lawName:name,date:date.replace(/-/g,""),id:selMst,currentId:currentMst,lawType:"law",allDates:JSON.stringify(allD),allMst:JSON.stringify(allMst),callback:"__cba2"},"__cba2",120000);
     if(d.error){body.innerHTML='<div class="msg err show">'+esc(d.error)+'</div>';return;}
+    d.lawName=name;
     var pd=d.data||{};
     var html=renderReport(pd,d);
     body.innerHTML=html;
@@ -191,15 +195,18 @@ function closeAnalysis(){document.getElementById("analysisModal").style.display=
 // ── 입법예고 보고서 렌더링 (Tab1과 독립) ────────────
 function renderReport(pd,d){
   var h="";
+  var lawNm=(d&&d.lawName)||"";
+  var lawLink=lawNm?"https://www.law.go.kr/법령/"+encodeURIComponent(lawNm):"";
+  function artLink(art){if(!art||!lawLink)return esc(art);return'<a href="'+lawLink+'" target="_blank" style="font-weight:900;color:var(--p);text-decoration:underline">'+esc(art)+'</a>';}
   // 비교 정보
   if(d&&d.selDateFmt&&d.currentDateFmt)h+='<div style="background:#1e293b;color:#fff;border-radius:10px;padding:12px;margin-bottom:12px;font-size:13px"><b>비교:</b> <span style="color:#fbbf24">'+esc(d.selDateFmt)+'</span> → <span style="color:#34d399">'+esc(d.currentDateFmt)+' (현행)</span></div>';
   if(pd.개정사유요약)h+='<div class="sbox" style="background:#fef2f2;border-color:#fecaca;color:#991b1b;margin-bottom:12px"><b>★ 개정 사유:</b> '+esc(pd.개정사유요약)+'</div>';
   // 비교표
-  var ch=pd.비교표||[];if(ch.length){h+='<div style="font-weight:900;margin:12px 0 8px">📊 변경 비교표</div><div style="overflow-x:auto"><table class="tbl"><thead><tr><th>분류</th><th>조문</th><th>현행</th><th>개정</th><th>유형</th><th>현장변화</th></tr></thead><tbody>';ch.forEach(function(c){h+='<tr><td><span class="badge b-cat">'+esc(c.카테고리||"")+'</span></td><td style="font-weight:900;color:var(--p)">'+esc(c.조문||"")+'</td><td>'+esc(c.현행||"")+'</td><td>'+esc(c.개정||"")+'</td><td><span class="vt vt-'+esc(c.변화유형||"")+'">'+esc(c.변화유형||"")+'</span></td><td style="font-size:12px">'+esc(c.현장변화점||"")+'</td></tr>';});h+='</tbody></table></div>';}
+  var ch=pd.비교표||[];if(ch.length){h+='<div style="font-weight:900;margin:12px 0 8px">📊 변경 비교표</div><div style="overflow-x:auto"><table class="tbl"><thead><tr><th>분류</th><th>조문</th><th>현행</th><th>개정</th><th>유형</th><th>현장변화</th></tr></thead><tbody>';ch.forEach(function(c){h+='<tr><td><span class="badge b-cat">'+esc(c.카테고리||"")+'</span></td><td style="white-space:nowrap">'+artLink(c.조문||"")+'</td><td>'+esc(c.현행||"")+'</td><td>'+esc(c.개정||"")+'</td><td><span class="vt vt-'+esc(c.변화유형||"")+'">'+esc(c.변화유형||"")+'</span></td><td style="font-size:12px">'+esc(c.현장변화점||"")+'</td></tr>';});h+='</tbody></table></div>';}
   // 대응방안
-  var opts=pd.대응방안||[];if(opts.length){h+='<div style="font-weight:900;margin:12px 0 8px">🔧 대응 방안</div>';opts.forEach(function(x){h+='<div class="opt"><div class="opt-nm">['+esc(x.카테고리||"")+'] '+esc(x.과업||"")+'</div>';if(x.세부내용)h+='<div class="opt-r">'+esc(x.세부내용)+'</div>';h+='</div>';});}
+  var opts=pd.대응방안||[];if(opts.length){h+='<div style="font-weight:900;margin:12px 0 8px">🔧 대응 방안</div>';opts.forEach(function(x){h+='<div class="opt"><div class="opt-nm">['+esc(x.카테고리||"")+'] '+esc(x.과업||"")+'</div>';if(x.세부내용)h+='<div class="opt-r">'+esc(x.세부내용)+'</div>';if(x.근거조문)h+='<div class="opt-r" style="color:var(--p)">근거: '+artLink(x.근거조문)+'</div>';h+='</div>';});}
   // 행정처분
-  var pens=pd.행정처분||[];if(pens.length){h+='<div style="font-weight:900;margin:12px 0 8px">⚖️ 행정처분</div>';pens.forEach(function(x){h+='<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px;margin-bottom:6px;font-size:13px"><b>'+esc(x.근거조문||"")+'</b> '+esc(x.위반내용||"")+" → <span style='color:#dc2626;font-weight:900'>"+esc(x.처분내용||"")+'</span></div>';});}
+  var pens=pd.행정처분||[];if(pens.length){h+='<div style="font-weight:900;margin:12px 0 8px">⚖️ 행정처분</div>';pens.forEach(function(x){h+='<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px;margin-bottom:6px;font-size:13px">'+artLink(x.근거조문||"")+' '+esc(x.위반내용||"")+" → <span style='color:#dc2626;font-weight:900'>"+esc(x.처분내용||"")+'</span></div>';});}
   // 부칙/별표
   if(pd.부칙분석&&pd.부칙분석!=="해당사항없음"&&pd.부칙분석!=="해당 사항 없음")h+='<div style="font-weight:900;margin:12px 0 8px">📎 부칙 분석</div><div class="sbox" style="background:#fdf4ff;border-color:#e9d5ff;color:#6b21a8">'+esc(pd.부칙분석)+'</div>';
   if(pd.별표분석&&pd.별표분석!=="해당사항없음"&&pd.별표분석!=="해당 사항 없음")h+='<div style="font-weight:900;margin:12px 0 8px">📊 별표 분석</div><div class="sbox" style="background:#ecfeff;border-color:#a5f3fc;color:#155e75">'+esc(pd.별표분석)+'</div>';
@@ -232,7 +239,7 @@ function rCat(d){var s=d.summary||{};var cs=[{k:"배출기준",i:"🏭",c:"#dc26
 function rComp(d){var ch=d.비교표||[];if(!ch.length)return'';var h='<div class="S"><div class="stl"><span class="n" style="background:#d97706">B</span>변경 비교표</div><div style="overflow-x:auto"><table class="tbl"><thead><tr><th>분류</th><th>조문</th><th>현행</th><th>개정</th><th>유형</th><th>현장변화</th><th>설비</th></tr></thead><tbody>';ch.forEach(function(c){var bc=c.설비보완필요==="Y"?"b-y":c.설비보완필요==="N"?"b-n":"b-unk";var art=esc(c.조문||"");var lawLink="https://www.law.go.kr/법령/"+encodeURIComponent(lawName);var artHtml=art?'<a href="'+lawLink+'" target="_blank" style="font-weight:900;color:var(--p);text-decoration:underline">'+art+'</a>':'';h+='<tr><td><span class="badge b-cat">'+esc(c.카테고리||"")+'</span></td><td style="white-space:nowrap">'+artHtml+'</td><td>'+esc(c.현행||"")+'</td><td>'+esc(c.개정||"")+'</td><td><span class="vt vt-'+esc(c.변화유형||"")+'">'+esc(c.변화유형||"")+'</span></td><td style="font-size:12px">'+esc(c.현장변화점||"")+(c.독소조항&&c.독소조항!=="해당없음"&&c.독소조항!=="해당 사항 없음"?'<br><span style="color:#dc2626;font-weight:900">⚠️ '+esc(c.독소조항)+'</span>':'')+'</td><td><span class="badge '+bc+'">'+esc(c.설비보완필요||"")+'</span></td></tr>';});return h+'</tbody></table></div></div>';}
 function rDef(d){var a=d.대상설비정의||[];if(!a.length)return'';var h='<div class="S"><div class="stl"><span class="n" style="background:#059669">C</span>규제 대상 설비</div>';a.forEach(function(x){h+='<div class="xc"><div class="xc-top"><span class="xc-name">'+esc(x.법규상정의||"")+'</span><span class="badge b-unk">'+esc(x.해당여부||"")+'</span></div><div class="xc-body"><div class="xr"><span class="xl">근거</span><div class="xv" style="font-weight:700;color:var(--p)">'+esc(x.근거조문||"")+'</div></div></div></div>';});return h+'</div>';}
 function rOpt(d){var o=d.대응방안||[];if(!o.length)return'';var h='<div class="S"><div class="stl"><span class="n" style="background:#7c3aed">D</span>대응 방안</div>';o.forEach(function(x){h+='<div class="opt"><div class="opt-nm">['+esc(x.카테고리||"")+'] '+esc(x.과업||"")+'</div>';if(x.세부내용)h+='<div class="opt-r">'+esc(x.세부내용)+'</div>';h+='<div class="opt-r" style="color:var(--mu)">비용: '+esc(x.비용영향요소||"사업장별 확인")+'</div></div>';});return h+'</div>';}
-function rPen(d){var p=d.행정처분||[];if(!p.length)return'';var h='<div class="S"><div class="stl"><span class="n" style="background:#dc2626">E</span>행정처분</div><div style="overflow-x:auto"><table class="tbl"><thead><tr><th>위반</th><th>근거</th><th>유형</th><th>내용</th></tr></thead><tbody>';p.forEach(function(x){h+='<tr><td>'+esc(x.위반내용||"")+'</td><td style="font-weight:900;color:var(--p)">'+esc(x.근거조문||"")+'</td><td>'+esc(x.처분유형||"")+'</td><td style="color:#dc2626;font-weight:700">'+esc(x.처분내용||"")+'</td></tr>';});return h+'</tbody></table></div></div>';}
+function rPen(d){var p=d.행정처분||[];if(!p.length)return'';var lawLink="https://www.law.go.kr/법령/"+encodeURIComponent(lawName);var h='<div class="S"><div class="stl"><span class="n" style="background:#dc2626">E</span>행정처분</div><div style="overflow-x:auto"><table class="tbl"><thead><tr><th>위반</th><th>근거</th><th>유형</th><th>내용</th></tr></thead><tbody>';p.forEach(function(x){var art=esc(x.근거조문||"");var artHtml=art?'<a href="'+lawLink+'" target="_blank" style="font-weight:900;color:var(--p);text-decoration:underline">'+art+'</a>':art;h+='<tr><td>'+esc(x.위반내용||"")+'</td><td>'+artHtml+'</td><td>'+esc(x.처분유형||"")+'</td><td style="color:#dc2626;font-weight:700">'+esc(x.처분내용||"")+'</td></tr>';});return h+'</tbody></table></div></div>';}
 function rRoad(d){var r=d.로드맵;if(!r||!r.계획)return'';var h='<div class="S"><div class="stl"><span class="n" style="background:#2563eb">F</span>D-Day 로드맵 ('+esc(r.시행일||"")+')</div>';var cl={"D-90":"#dc2626","D-60":"#d97706","D-30":"#2563eb","D-7":"#059669"};(r.계획||[]).forEach(function(x){var c=cl[x.시점]||"#64748b";h+='<div class="rm-ph" style="border-color:'+c+'"><div class="rm-lb" style="color:'+c+'">📌 '+esc(x.시점||"")+'</div><div class="rm-it">'+esc(x.과업||"")+(x.담당?' — <b>'+esc(x.담당)+'</b>':'')+'</div></div>';});return h+'</div>';}
 function rExec(d){var a=d.실행지시||[];if(!a.length)return'';var h='<div class="S"><div class="stl"><span class="n" style="background:#0f172a">G</span>실행지시 ('+a.length+')</div>';a.forEach(function(c){h+='<div class="xc"><div class="xc-top"><span class="xc-name">'+esc(c.작업명||"")+'</span><span class="badge b-cat">'+esc(c.카테고리||"")+'</span></div><div class="xc-body">';if(c.트리거)h+='<span class="xt">⚡ '+esc(c.트리거)+'</span>';if(c.즉시행동)h+='<div class="xa">'+esc(c.즉시행동)+'</div>';h+='<div class="xr"><span class="xl">담당</span><div class="xv">'+esc(c.담당||"")+(c.기한?' · <b>'+esc(c.기한)+'</b>':'')+'</div></div>';if(c.비용영향요소)h+='<div class="xr"><span class="xl">비용</span><div class="xv">'+esc(c.비용영향요소)+'</div></div>';if(c.리스크)h+='<div class="risk">⚠️ '+esc(c.리스크)+'</div>';h+='</div></div>';});return h+'</div>';}
 function rIss(d){var i=d.해석이슈||[];if(!i.length)return'';var h='<div class="S"><div class="stl"><span class="n" style="background:#d97706">H</span>해석 이슈</div>';i.forEach(function(x){h+='<div class="issue"><div class="issue-t">⚠️ '+esc(x.이슈||"")+'</div>';if(x.판단기준)h+='<div class="issue-r">판단: '+esc(x.판단기준)+'</div>';if(x.권장대응)h+='<div class="issue-r">대응: '+esc(x.권장대응)+'</div>';h+='</div>';});return h+'</div>';}
