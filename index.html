@@ -53,7 +53,7 @@ select{width:100%;padding:13px 42px 13px 16px;border:1.5px solid var(--bd);borde
 </head>
 <body>
 <div class="topbar"><div class="logo">📋 환경법령 개정 대응 대시보드</div><div class="sub">여수 석유화학공장 환경안전팀</div></div>
-<div class="tabs"><button class="tab active" id="tab1" onclick="switchTab(1)">📋 법규 비교 분석</button><button class="tab" id="tab2" onclick="switchTab(2)">🔔 최근 법규 개정</button></div>
+<div class="tabs"><button class="tab active" id="tab1" onclick="switchTab(1)">📋 법규 비교 분석</button><button class="tab" id="tab2" onclick="switchTab(2)">📢 입법예고</button></div>
 <div class="wrap">
 <!-- TAB 1 -->
 <div id="panel1">
@@ -77,18 +77,29 @@ select{width:100%;padding:13px 42px 13px 16px;border:1.5px solid var(--bd);borde
 <button class="run-btn" style="height:48px;background:linear-gradient(135deg,#059669,#10b981)" onclick="syncStaff()">💾 서버에 저장 (이메일 알림 연동)</button>
 <div class="msg ok" id="syncMsg"></div>
 </div>
-<div class="card"><div class="lbl">최근 법규 개정 현황</div>
-<p style="font-size:13px;color:var(--mu);margin-bottom:12px">환경 관련 9개 법령의 최근 시행일 목록</p>
-<button class="run-btn" id="recentBtn" onclick="loadRecent()" style="height:48px;margin:0">🔄 최근 개정 조회</button>
+<div class="card"><div class="lbl">입법예고 목록</div>
+<p style="font-size:13px;color:var(--mu);margin-bottom:12px">매일 자동 감지된 환경법규 입법예고 목록입니다. 항목을 클릭하면 AI 영향 분석 보고서를 확인할 수 있습니다.</p>
+<div id="noticeLoading" style="text-align:center;color:var(--p);font-weight:700;padding:10px">불러오는 중...</div>
 </div>
 <div id="recentList"></div>
+<div id="analysisPanel" style="display:none">
+<div class="card" style="border:2px solid var(--p)">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+<div class="lbl" style="margin:0">AI 영향 분석 보고서</div>
+<button onclick="closeAnalysis()" style="border:none;background:#f1f5f9;padding:6px 12px;border-radius:8px;font-family:'Noto Sans KR',sans-serif;font-size:12px;font-weight:700;color:var(--mu);cursor:pointer">✕ 닫기</button>
+</div>
+<div id="analysisTitle" style="font-size:15px;font-weight:900;color:var(--p);margin-bottom:12px"></div>
+<div id="analysisBody"></div>
+<div id="analysisMeta" style="font-size:11px;color:var(--mu);margin-top:12px"></div>
+</div>
+</div>
 </div>
 </div>
 <script>
-var GAS="https://script.google.com/macros/s/AKfycbxt849HCD92gI-LIh5ZUAPGDM6R9J59RO8l9eMzfE7cPXSY8cTFC1CTRs82_BgyCvMc5A/exec";
+var GAS="https://script.google.com/macros/s/AKfycby8Yq7IUQaTCP3drxiiMdHfUfwWRCEXiI9FdywaXdyZvI02y8Q8A5AaSFf149p7dU0BEw/exec";
 var lawName="",lawType="law",allDates=[],mstMap={},staffData=[];
 
-function switchTab(n){document.getElementById("panel1").style.display=n===1?"block":"none";document.getElementById("panel2").style.display=n===2?"block":"none";document.getElementById("tab1").classList.toggle("active",n===1);document.getElementById("tab2").classList.toggle("active",n===2);if(n===2){loadStaffFromServer();if(!document.getElementById("recentList").innerHTML)loadRecent();}}
+function switchTab(n){document.getElementById("panel1").style.display=n===1?"block":"none";document.getElementById("panel2").style.display=n===2?"block":"none";document.getElementById("tab1").classList.toggle("active",n===1);document.getElementById("tab2").classList.toggle("active",n===2);if(n===2){loadStaffFromServer();loadNotices();}}
 
 // ── 담당자 관리 ─────────────────────────────────────
 function addStaff(){var nm=document.getElementById("stName").value.trim(),em=document.getElementById("stEmail").value.trim();var sel=document.getElementById("stLaw"),laws=[];for(var i=0;i<sel.options.length;i++){if(sel.options[i].selected)laws.push(sel.options[i].value);}
@@ -99,8 +110,93 @@ function renderStaff(){var h="";staffData.forEach(function(s,i){h+='<div class="
 async function syncStaff(){try{await jp({action:"saveStaff",data:JSON.stringify(staffData),callback:"__cbs"},"__cbs",15000);document.getElementById("syncMsg").textContent="✅ 서버 저장 완료! 매일 오전 8시 자동 알림이 담당자에게 발송됩니다.";document.getElementById("syncMsg").classList.add("show");setTimeout(function(){document.getElementById("syncMsg").classList.remove("show");},5000);}catch(ex){alert("저장 실패: "+ex.message);}}
 async function loadStaffFromServer(){try{var d=await jp({action:"getStaff",callback:"__cbgs"},"__cbgs",10000);if(d.staff&&d.staff.length){staffData=d.staff;renderStaff();}}catch(ex){renderStaff();}}
 
-// ── 최근 개정 ───────────────────────────────────────
-async function loadRecent(){var btn=document.getElementById("recentBtn"),list=document.getElementById("recentList");btn.disabled=true;btn.innerHTML='<div class="spin"></div> 조회 중...';list.innerHTML="";try{var d=await jp({action:"recent",callback:"__cbr"},"__cbr",30000);var items=d.items||[];if(!items.length){list.innerHTML='<div class="card" style="text-align:center;color:var(--mu)">결과 없음</div>';}else{var h="";items.forEach(function(x){h+='<div class="rc"><span class="rc-nm">'+esc(x.법령명||"")+'</span><span class="rc-dt">📅 '+esc(x.시행일||"")+'</span></div>';});list.innerHTML=h;}}catch(ex){list.innerHTML='<div class="msg err show">'+esc(ex.message)+'</div>';}btn.disabled=false;btn.innerHTML="🔄 최근 개정 조회";}
+// ── 입법예고 목록 (서버 자동 저장분 로드) ──────────
+async function loadNotices(){
+  var list=document.getElementById("recentList"),loading=document.getElementById("noticeLoading");
+  closeAnalysis();
+  try{
+    var d=await jp({action:"recent",callback:"__cbr"},"__cbr",15000);
+    var items=d.items||[];
+    if(loading)loading.style.display="none";
+    if(!items.length){list.innerHTML='<div class="card" style="text-align:center;color:var(--mu);padding:30px">감지된 입법예고가 없습니다.<br><span style="font-size:12px">매일 오전 8시 자동 스캔됩니다.</span></div>';return;}
+    var h="";items.forEach(function(x){
+      h+='<div class="rc" style="cursor:pointer" onclick="openAnalysis(\''+esc(x.법령명||"")+'\',\''+esc(x.시행일||"")+'\',\''+esc(x.MST||"")+'\')">'
+        +'<span class="rc-nm">'+esc(x.법령명||"")+'</span>'
+        +'<span class="rc-dt">📅 '+esc(x.시행일||"")+'</span>'
+        +(x.감지일?'<span style="font-size:10px;color:var(--mu)">감지: '+esc(x.감지일)+'</span>':'')
+        +'<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;background:#eff6ff;color:#1d4ed8">📄 보고서 보기</span></div>';
+    });
+    list.innerHTML=h;
+  }catch(ex){if(loading)loading.style.display="none";list.innerHTML='<div class="card" style="text-align:center;color:var(--mu);padding:30px">서버 연결 실패<br><span style="font-size:12px">'+esc(ex.message)+'</span></div>';}
+}
+
+// ── AI 영향 분석 (서버 캐시 우선, 선택일 vs 현행 비교) ─
+async function openAnalysis(name,date,mst){
+  var panel=document.getElementById("analysisPanel");
+  var body=document.getElementById("analysisBody");
+  var title=document.getElementById("analysisTitle");
+  var meta=document.getElementById("analysisMeta");
+  var key=name+"_"+date;
+  panel.style.display="block";
+  title.textContent="📋 "+name+" ("+date+" 시행)";
+  body.innerHTML='<div style="text-align:center;padding:20px;color:var(--mu)">보고서 확인 중...</div>';
+  meta.textContent="";
+  panel.scrollIntoView({behavior:"smooth"});
+  // 1순위: 서버 캐시 확인
+  try{
+    var cached=await jp({action:"getReport",key:key,callback:"__cbgr"},"__cbgr",10000);
+    if(cached.report){
+      body.innerHTML=cached.report.html;
+      meta.textContent="💾 서버 저장 보고서 · "+cached.report.date+" · "+cached.report.model;
+      return;
+    }
+  }catch(ex){}
+  // 2순위: 시행일 목록 조회 → 선택일 vs 현행 비교 분석
+  body.innerHTML='<div style="text-align:center;padding:30px;color:var(--p);font-weight:700"><div class="spin" style="margin:0 auto 12px;border-top-color:var(--p);border-color:#bfdbfe"></div>① 시행일 목록 조회 중...</div>';
+  try{
+    // 해당 법령의 전체 시행일 + MST 조회
+    var dates=await jp({action:"dates",lawName:name,lawType:"law",callback:"__cbd2"},"__cbd2",30000);
+    var allD=dates.dates||[];
+    var allMst=dates.mstMap||{};
+    var currentMst=allD.length>0?(allMst[allD[0]]||""):"";
+    var selMst=allMst[date.replace(/-/g,"")]||mst||"";
+    body.innerHTML='<div style="text-align:center;padding:30px;color:var(--p);font-weight:700"><div class="spin" style="margin:0 auto 12px;border-top-color:var(--p);border-color:#bfdbfe"></div>② AI 영향 분석 중... (최대 120초)</div>';
+    // 선택일 vs 현행 비교 분석
+    var d=await jp({action:"analyze",lawName:name,date:date.replace(/-/g,""),id:selMst,currentId:currentMst,lawType:"law",allDates:JSON.stringify(allD),allMst:JSON.stringify(allMst),callback:"__cba2"},"__cba2",120000);
+    if(d.error){body.innerHTML='<div class="msg err show">'+esc(d.error)+'</div>';return;}
+    var pd=d.data||{};
+    var html=renderReport(pd,d);
+    body.innerHTML=html;
+    var now=new Date().toLocaleString("ko-KR",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"});
+    meta.textContent=(d.model||"AI")+" · "+now+" · 선택일("+esc(d.selDateFmt||"")+") vs 현행("+esc(d.currentDateFmt||"")+")";
+    // 서버에 저장
+    try{await jp({action:"saveReport",key:key,data:JSON.stringify({html:html,date:now,model:d.model||"AI"}),callback:"__cbsr"},"__cbsr",10000);}catch(ex){}
+    loadNotices();
+  }catch(ex){body.innerHTML='<div class="msg err show">분석 실패: '+esc(ex.message)+'</div>';}
+}
+
+function closeAnalysis(){document.getElementById("analysisPanel").style.display="none";}
+
+// ── 입법예고 보고서 렌더링 (Tab1과 독립) ────────────
+function renderReport(pd,d){
+  var h="";
+  // 비교 정보
+  if(d&&d.selDateFmt&&d.currentDateFmt)h+='<div style="background:#1e293b;color:#fff;border-radius:10px;padding:12px;margin-bottom:12px;font-size:13px"><b>비교:</b> <span style="color:#fbbf24">'+esc(d.selDateFmt)+'</span> → <span style="color:#34d399">'+esc(d.currentDateFmt)+' (현행)</span></div>';
+  if(pd.개정사유요약)h+='<div class="sbox" style="background:#fef2f2;border-color:#fecaca;color:#991b1b;margin-bottom:12px"><b>★ 개정 사유:</b> '+esc(pd.개정사유요약)+'</div>';
+  // 비교표
+  var ch=pd.비교표||[];if(ch.length){h+='<div style="font-weight:900;margin:12px 0 8px">📊 변경 비교표</div><div style="overflow-x:auto"><table class="tbl"><thead><tr><th>분류</th><th>조문</th><th>현행</th><th>개정</th><th>유형</th><th>현장변화</th></tr></thead><tbody>';ch.forEach(function(c){h+='<tr><td><span class="badge b-cat">'+esc(c.카테고리||"")+'</span></td><td style="font-weight:900;color:var(--p)">'+esc(c.조문||"")+'</td><td>'+esc(c.현행||"")+'</td><td>'+esc(c.개정||"")+'</td><td><span class="vt vt-'+esc(c.변화유형||"")+'">'+esc(c.변화유형||"")+'</span></td><td style="font-size:12px">'+esc(c.현장변화점||"")+'</td></tr>';});h+='</tbody></table></div>';}
+  // 대응방안
+  var opts=pd.대응방안||[];if(opts.length){h+='<div style="font-weight:900;margin:12px 0 8px">🔧 대응 방안</div>';opts.forEach(function(x){h+='<div class="opt"><div class="opt-nm">['+esc(x.카테고리||"")+'] '+esc(x.과업||"")+'</div>';if(x.세부내용)h+='<div class="opt-r">'+esc(x.세부내용)+'</div>';h+='</div>';});}
+  // 행정처분
+  var pens=pd.행정처분||[];if(pens.length){h+='<div style="font-weight:900;margin:12px 0 8px">⚖️ 행정처분</div>';pens.forEach(function(x){h+='<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px;margin-bottom:6px;font-size:13px"><b>'+esc(x.근거조문||"")+'</b> '+esc(x.위반내용||"")+" → <span style='color:#dc2626;font-weight:900'>"+esc(x.처분내용||"")+'</span></div>';});}
+  // 부칙/별표
+  if(pd.부칙분석&&pd.부칙분석!=="해당사항없음"&&pd.부칙분석!=="해당 사항 없음")h+='<div style="font-weight:900;margin:12px 0 8px">📎 부칙 분석</div><div class="sbox" style="background:#fdf4ff;border-color:#e9d5ff;color:#6b21a8">'+esc(pd.부칙분석)+'</div>';
+  if(pd.별표분석&&pd.별표분석!=="해당사항없음"&&pd.별표분석!=="해당 사항 없음")h+='<div style="font-weight:900;margin:12px 0 8px">📊 별표 분석</div><div class="sbox" style="background:#ecfeff;border-color:#a5f3fc;color:#155e75">'+esc(pd.별표분석)+'</div>';
+  // 로드맵
+  var rm=pd.로드맵;if(rm&&rm.계획){h+='<div style="font-weight:900;margin:12px 0 8px">📅 D-Day 로드맵</div>';var cl={"D-90":"#dc2626","D-60":"#d97706","D-30":"#2563eb","D-7":"#059669"};(rm.계획||[]).forEach(function(x){var c=cl[x.시점]||"#64748b";h+='<div class="rm-ph" style="border-color:'+c+'"><div class="rm-lb" style="color:'+c+'">📌 '+esc(x.시점||"")+'</div><div class="rm-it">'+esc(x.과업||"")+(x.담당?' — <b>'+esc(x.담당)+'</b>':'')+'</div></div>';});}
+  if(!h)h='<div style="color:var(--mu);text-align:center;padding:20px">분석 데이터 없음</div>';
+  return h;
+}
 
 // ── JSONP ────────────────────────────────────────────
 function jp(p,cb,ms){return new Promise(function(res,rej){var old=document.getElementById("__"+cb);if(old)old.remove();var t=setTimeout(function(){delete window[cb];rej(new Error("응답없음"));},ms);window[cb]=function(d){clearTimeout(t);delete window[cb];res(d);};var s=document.createElement("script");s.id="__"+cb;s.src=GAS+"?"+new URLSearchParams(p).toString();s.onerror=function(){clearTimeout(t);delete window[cb];rej(new Error("연결실패"));};document.body.appendChild(s);});}
