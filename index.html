@@ -95,11 +95,20 @@ select{width:100%;padding:13px 42px 13px 16px;border:1.5px solid var(--bd);borde
 <div id="analysisTitle" style="font-size:16px;font-weight:900;color:var(--p);margin-bottom:14px"></div>
 <div id="analysisBody"></div>
 <div id="analysisMeta" style="font-size:11px;color:var(--mu);margin-top:14px;padding-top:12px;border-top:1px solid var(--bd)"></div>
+<!-- 피드백 영역 -->
+<div id="feedbackArea" style="margin-top:16px;padding-top:16px;border-top:2px solid var(--p)">
+<div style="font-size:13px;font-weight:900;color:var(--p);margin-bottom:8px">💬 AI 피드백 (보고서 개선 요청)</div>
+<textarea id="feedbackInput" placeholder="예: 제12조1항은 삭제된 조문이다. 제20~40조 사이 배출기준 관련 조문을 중점 분석해달라." style="width:100%;height:80px;border:1.5px solid var(--bd);border-radius:10px;padding:10px;font-family:'Noto Sans KR',sans-serif;font-size:13px;resize:vertical;outline:none"></textarea>
+<div style="display:flex;gap:8px;margin-top:8px">
+<button onclick="submitFeedback()" style="flex:1;padding:12px;border:none;border-radius:10px;background:linear-gradient(135deg,#1e40af,#2563eb);color:#fff;font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:900;cursor:pointer">🔄 피드백 반영하여 재분석</button>
+<button onclick="clearAndReanalyze()" style="padding:12px 16px;border:none;border-radius:10px;background:#dc2626;color:#fff;font-family:'Noto Sans KR',sans-serif;font-size:13px;font-weight:900;cursor:pointer">🗑️ 삭제 후 재분석</button>
+</div>
+</div>
 </div>
 </div>
 </div>
 <script>
-var GAS="https://script.google.com/macros/s/AKfycbzolifi7p9g8wSR1PtinyKK6haoFn_xwGulrbldeDxaqjVKi6JN4OYZ1SJFyKu8X4bwCQ/exec";
+var GAS="https://script.google.com/macros/s/AKfycbxWSDpCjJWgNHnUtTyGeOthJPTUToHTnY7npbgWm_eN_nKXagpwOr1zw8EPSvnxXwhKzA/exec";
 var lawName="",lawType="law",allDates=[],mstMap={},staffData=[];
 
 function switchTab(n){document.getElementById("panel1").style.display=n===1?"block":"none";document.getElementById("panel2").style.display=n===2?"block":"none";document.getElementById("tab1").classList.toggle("active",n===1);document.getElementById("tab2").classList.toggle("active",n===2);if(n===2){loadStaffFromServer();loadNotices();}}
@@ -143,6 +152,7 @@ async function openAnalysis(name,date,mst){
   var title=document.getElementById("analysisTitle");
   var meta=document.getElementById("analysisMeta");
   var key=name+"_"+date;
+  curReportCtx={name:name,date:date,mst:mst,lastJson:""};
   panel.style.display="block";
   title.textContent="📋 "+name+" ("+date+" 시행)";
   body.innerHTML='<div style="text-align:center;padding:20px;color:var(--mu)">보고서 확인 중...</div>';
@@ -191,6 +201,43 @@ async function openAnalysis(name,date,mst){
 }
 
 function closeAnalysis(){document.getElementById("analysisModal").style.display="none";}
+var curReportCtx={name:"",date:"",mst:"",lastJson:""};
+
+// ── 피드백 반영 재분석 ──────────────────────────────
+async function submitFeedback(){
+  var fb=document.getElementById("feedbackInput").value.trim();
+  if(!fb){alert("피드백 내용을 입력하세요");return;}
+  var body=document.getElementById("analysisBody");
+  var meta=document.getElementById("analysisMeta");
+  body.innerHTML='<div style="text-align:center;padding:30px;color:var(--p);font-weight:700"><div class="spin" style="margin:0 auto 12px;border-top-color:var(--p);border-color:#bfdbfe"></div>피드백 반영 재분석 중...</div>';
+  try{
+    var d=await jp({action:"refine",feedback:fb,prevReport:curReportCtx.lastJson.slice(0,2000),lawName:curReportCtx.name,callback:"__cbrf"},"__cbrf",120000);
+    if(d.error){body.innerHTML='<div class="msg err show">'+esc(d.error)+'</div>';return;}
+    d.lawName=curReportCtx.name;
+    var pd=d.data||{};
+    var html=renderReport(pd,d);
+    body.innerHTML=html;
+    curReportCtx.lastJson=JSON.stringify(pd);
+    var now=new Date().toLocaleString("ko-KR",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"});
+    meta.textContent="🔄 피드백 반영 · "+(d.model||"AI")+" · "+now;
+    // 캐시 업데이트
+    var key=curReportCtx.name+"_"+curReportCtx.date;
+    var lsKey="rpt_"+key;
+    var saveData=JSON.stringify({html:html,date:now,model:d.model||"AI"});
+    try{localStorage.setItem(lsKey,saveData);}catch(ex){}
+    try{await jp({action:"saveReport",key:key,data:saveData,callback:"__cbsr2"},"__cbsr2",10000);}catch(ex){}
+    document.getElementById("feedbackInput").value="";
+  }catch(ex){body.innerHTML='<div class="msg err show">피드백 반영 실패: '+esc(ex.message)+'</div>';}
+}
+
+// ── 캐시 삭제 후 재분석 ─────────────────────────────
+async function clearAndReanalyze(){
+  if(!confirm("기존 보고서를 삭제하고 처음부터 다시 AI 분석합니다.\n계속하시겠습니까?"))return;
+  var key=curReportCtx.name+"_"+curReportCtx.date;
+  try{localStorage.removeItem("rpt_"+key);}catch(ex){}
+  try{await jp({action:"saveReport",key:key,data:"",callback:"__cbdel"},"__cbdel",5000);}catch(ex){}
+  openAnalysis(curReportCtx.name,curReportCtx.date,curReportCtx.mst);
+}
 
 // ── 입법예고 보고서 렌더링 (Tab1과 독립) ────────────
 function renderReport(pd,d){
