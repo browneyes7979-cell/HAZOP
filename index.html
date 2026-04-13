@@ -324,9 +324,9 @@ async function openAnalysis(name, date, mst) {
         var currentMst = getCurrentMstFromMap(allD, allMst);  // GPT: 오늘 기준 정확한 현행 MST
         var selMst = allMst[date.replace(/-/g, "")] || mst || "";
         
-        body.innerHTML = '<div style="text-align:center;padding:30px;color:var(--p);font-weight:700"><div class="spin" style="margin:0 auto 12px;border-top-color:var(--p);border-color:#bfdbfe"></div>② AI 영향 분석 중... (최대 120초)</div>';
+        body.innerHTML = '<div style="text-align:center;padding:30px;color:var(--p);font-weight:700"><div class="spin" style="margin:0 auto 12px;border-top-color:var(--p);border-color:#bfdbfe"></div>② AI 영향 분석 중... (최대 180초)</div>';
         
-        var d = await jp({action: "analyze", lawName: name, date: date.replace(/-/g, ""), id: selMst, currentId: currentMst, lawType: "law", allDates: JSON.stringify(allD), allMst: JSON.stringify(allMst), callback: "__cba2"}, "__cba2", 120000);
+        var d = await jp({action: "analyze", lawName: name, date: date.replace(/-/g, ""), id: selMst, currentId: currentMst, lawType: "law", allDates: JSON.stringify(allD), allMst: JSON.stringify(allMst), callback: "__cba2"}, "__cba2", 180000);
         
         if (d.error) { body.innerHTML = '<div class="msg err show">' + esc(d.error) + '</div>'; return; }
         
@@ -358,7 +358,7 @@ async function submitFeedback() {
     body.innerHTML = '<div style="text-align:center;padding:30px;color:var(--p);font-weight:700"><div class="spin" style="margin:0 auto 12px;border-top-color:var(--p);border-color:#bfdbfe"></div>피드백 반영 재분석 중...</div>';
     
     try {
-        var d = await jp({action: "refine", feedback: fb, prevReport: curReportCtx.lastJson.slice(0, 2000), lawName: curReportCtx.name, callback: "__cbrf"}, "__cbrf", 120000);
+        var d = await jp({action: "refine", feedback: fb, prevReport: curReportCtx.lastJson.slice(0, 2000), lawName: curReportCtx.name, callback: "__cbrf"}, "__cbrf", 180000);
         if (d.error) { body.innerHTML = '<div class="msg err show">' + esc(d.error) + '</div>'; return; }
         
         d.lawName = curReportCtx.name;
@@ -535,11 +535,11 @@ async function run() {
     btn.innerHTML = '<div class="spin"></div> AI 분석 중...';
     document.getElementById("dash").style.display = "none";
     step.classList.add("show");
-    step.textContent = "🤖 분석 중... (최대 120초)";
+    step.textContent = "🤖 분석 중... (최대 180초)";
     var curId = getCurrentMstFromMap(allDates, mstMap);  // GPT: 오늘 기준 정확한 현행 MST
     
     try {
-        var d = await jp({action: "analyze", id: mstMap[dt] || "", currentId: curId, date: dt, lawName: lawName, lawType: lawType, allDates: JSON.stringify(allDates), allMst: JSON.stringify(mstMap), callback: "__cba"}, "__cba", 120000);
+        var d = await jp({action: "analyze", id: mstMap[dt] || "", currentId: curId, date: dt, lawName: lawName, lawType: lawType, allDates: JSON.stringify(allDates), allMst: JSON.stringify(mstMap), callback: "__cba"}, "__cba", 180000);
         if (d.error) throw new Error(d.error);
         if (!d.data) throw new Error("결과 없음");
         renderAll(d);
