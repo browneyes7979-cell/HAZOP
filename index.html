@@ -61,7 +61,21 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--tx)}
   <button class="tab" id="tab3" onclick="switchTab(3)">👤 담당자 관리</button>
 </div>
 <div class="wrap">
-<div id="panel2" style="display:none"><div class="card"><div class="lbl">입법 예고 (관보)</div><p style="font-size:13px;color:var(--mu)">관보 입법예고 연동은 추후 구현 예정입니다.</p></div></div>
+<div id="panel2" style="display:none">
+<div class="card"><div class="lbl">입법 예고 (관보)</div>
+<div class="filter-row">
+  <div><label>검색어</label><input id="gwSearch" placeholder="법령명/기관명" style="width:160px"></div>
+  <div><label>시작일</label><input id="gwFrom" type="date"></div>
+  <div><label>종료일</label><input id="gwTo" type="date"></div>
+  <div style="align-self:flex-end"><button class="btn-sm btn-p" onclick="loadGwanbo()">🔍 조회</button></div>
+</div>
+<div class="update-bar"><span id="gwInfo">최근 3개월 입법예고를 조회합니다.</span></div>
+<div class="tbl-wrap">
+<table class="law-tbl"><thead><tr><th style="width:8%">발행일</th><th style="width:10%">발행기관</th><th style="width:52%">제목</th><th style="width:15%">근거법령</th><th style="width:8%">구분</th><th style="width:7%">원문</th></tr></thead>
+<tbody id="gwBody"><tr><td colspan="6" style="text-align:center;padding:30px;color:var(--mu)">🔍 조회 버튼을 클릭하세요</td></tr></tbody>
+</table></div>
+<div class="paging" id="gwPaging"></div>
+</div></div>
 <div id="panel1">
 <div class="card"><div class="lbl">필터 키워드 설정</div><div id="kwList" class="kw-list"></div><div style="display:flex;gap:6px;margin-top:6px"><input id="kwInput" placeholder="키워드 추가" style="flex:1;padding:6px 10px;border:1px solid var(--bd);border-radius:6px;font-size:12px;outline:none"><button class="btn-sm btn-p" onclick="addKW()">추가</button><button class="btn-sm btn-g" onclick="saveKW()">저장</button></div></div>
 <div class="card"><div class="lbl">검색 · 필터</div><div class="filter-row"><div><label>상위법</label><select id="fParent" onchange="applyFilter()"><option value="">전체</option><option value="대기환경보전법">대기환경보전법</option><option value="물환경보전법">물환경보전법</option><option value="화학물질관리법">화학물질관리법</option><option value="화학물질의 등록 및 평가">화학물질 등록·평가법</option><option value="산업안전보건법">산업안전보건법</option><option value="위험물안전관리법">위험물안전관리법</option><option value="소음·진동">소음·진동관리법</option><option value="악취방지법">악취방지법</option><option value="토양환경보전법">토양환경보전법</option><option value="환경영향평가법">환경영향평가법</option><option value="폐기물관리법">폐기물관리법</option><option value="자원순환">자원순환기본법</option><option value="온실가스">온실가스 배출권법</option><option value="탄소중립">탄소중립기본법</option><option value="환경오염시설">환경오염시설 통합관리법</option><option value="고압가스">고압가스 안전관리법</option><option value="중대재해">중대재해 처벌법</option><option value="하수도법">하수도법</option><option value="석면안전">석면안전관리법</option><option value="잔류성유기">잔류성유기오염물질법</option><option value="액화석유가스">액화석유가스법</option><option value="대기관리권역">대기관리권역 특별법</option></select></div><div><label>법령명</label><input id="fNm" placeholder="검색어" oninput="applyFilter()"></div><div><label>종류</label><select id="fTp" onchange="applyFilter()"><option value="">전체</option><option value="법률">법률</option><option value="대통령령">시행령</option><option value="부령">시행규칙</option><option value="고시">고시</option><option value="공고">공고</option><option value="예규">예규</option></select></div><div><label>공포일 이후</label><input id="fPdFrom" type="date" onchange="applyFilter()"></div><div><label>시행일 이후</label><input id="fEdFrom" type="date" onchange="applyFilter()"></div><div style="align-self:flex-end"><button class="btn-sm btn-o" onclick="clearFilter()">초기화</button></div></div></div>
@@ -77,12 +91,19 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--tx)}
 <div class="modal" id="deepModal"><div class="modal-box"><div class="modal-head"><h3 id="deepTitle">🔍 심층 분석</h3><button class="modal-close" onclick="closeDeep()">✕ 닫기</button></div><div class="modal-body"><div id="deepBody"></div><div id="deepMeta" style="font-size:11px;color:var(--mu);margin-top:12px;padding-top:10px;border-top:1px solid var(--bd)"></div></div></div></div>
 
 <script>
-var GAS="https://script.google.com/macros/s/AKfycbz5WrMcqFD6y7-wDYlHrNP8WZ8DbsDk2TntFw9STMH-DH1Ck2wYj8EqPQZs00JthXXZLw/exec";
+var GAS="https://script.google.com/macros/s/AKfycbzqcdVX32owJ8O1CqmsTz81WlaaNeUhAy4OkSrYys3o_Yt0LPjbf0m0g2UPE9t2mfEMxQ/exec";
 var staffData=[],kwData=[],lawItems=[],filteredItems=[],curPage=1,PAGE_SIZE=50,curReportLaw=null,curReportData=null;
 
 function jp(p,cb,ms){return new Promise(function(res,rej){var old=document.getElementById("__"+cb);if(old)old.remove();var t=setTimeout(function(){delete window[cb];rej(new Error("응답없음"));},ms);window[cb]=function(d){clearTimeout(t);delete window[cb];res(d);};var s=document.createElement("script");s.id="__"+cb;s.src=GAS+"?"+Object.keys(p).map(function(k){return k+"="+encodeURIComponent(p[k]);}).join("&");document.body.appendChild(s);});}
 function switchTab(n){for(var i=1;i<=3;i++){document.getElementById("panel"+i).style.display=i===n?"block":"none";document.getElementById("tab"+i).className="tab"+(i===n?" active":"");}}
-window.onload=function(){loadKW();loadStaff();loadLawList();};
+window.onload=function(){
+  loadKW();loadStaff();loadLawList();
+  // 관보 기본 2달
+  var d=new Date();d.setMonth(d.getMonth()-2);
+  document.getElementById("gwFrom").value=d.toISOString().slice(0,10);
+  document.getElementById("gwTo").value=new Date().toISOString().slice(0,10);
+  loadGwanbo();
+};
 
 // ── 담당자 ──
 function renderStaff(){var h="";staffData.forEach(function(s,i){h+='<div style="display:flex;align-items:center;gap:8px;padding:8px;border-bottom:1px solid var(--bd);flex-wrap:wrap"><span style="font-size:12px;font-weight:700">'+esc(s.name)+'</span><span style="font-size:11px;color:var(--mu)">'+esc(s.email)+'</span><span style="font-size:10px;color:var(--p)">'+((s.laws||[]).length)+'개</span><button class="btn-sm" style="margin-left:auto;background:var(--red);color:#fff;padding:4px 10px;font-size:10px" onclick="delStaff('+i+')">삭제</button></div>';});document.getElementById("staffList").innerHTML=h;}
@@ -277,6 +298,47 @@ function renderDeep(pd){
 
 function closeDeep(){document.getElementById("deepModal").style.display="none";}
 function closeModal(){document.getElementById("reportModal").style.display="none";}
+// ── 관보 입법예고 ──
+var gwPage=1,gwTotal=0;
+async function loadGwanbo(page){
+  gwPage=page||1;
+  var body=document.getElementById("gwBody");
+  body.innerHTML='<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--p);font-weight:700"><div class="spin" style="border-color:#bfdbfe;border-top-color:var(--p);margin:0 auto 8px"></div>관보 입법예고 조회 중...</td></tr>';
+  var search=document.getElementById("gwSearch").value.trim();
+  var from=document.getElementById("gwFrom").value.replace(/-/g,"");
+  var to=document.getElementById("gwTo").value.replace(/-/g,"");
+  var params={action:"gwanbo",pageNo:String(gwPage),pageSize:"20",callback:"__gw"};
+  if(from) params.reqFrom=from;
+  if(to) params.reqTo=to;
+  if(search) params.search=search;
+  try{
+    var d=await jp(params,"__gw",30000);
+    if(d.error){body.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--red)">'+esc(d.error)+'</td></tr>';return;}
+    gwTotal=d.totalCount||0;
+    var items=d.items||[];
+    document.getElementById("gwInfo").textContent="총 "+gwTotal+"건 | "+items.length+"건 표시";
+    if(!items.length){body.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--mu)">조회 결과 없음</td></tr>';return;}
+    var h="";
+    items.forEach(function(it){
+      h+='<tr><td style="font-size:10px;white-space:nowrap">'+esc(it.date)+'</td>'+
+        '<td style="font-size:11px;font-weight:700">'+esc(it.org)+'</td>'+
+        '<td><a href="'+esc(it.pdf)+'" target="_blank" style="color:var(--p);font-weight:700;text-decoration:underline;font-size:12px">'+esc(it.title)+'</a></td>'+
+        '<td style="font-size:10px;color:var(--mu)">'+esc(it.law)+'</td>'+
+        '<td style="font-size:10px;text-align:center">'+esc(it.type)+'</td>'+
+        '<td style="text-align:center"><a href="'+esc(it.pdf)+'" target="_blank" class="btn-sm" style="padding:4px 8px;font-size:10px;background:var(--p);color:#fff;text-decoration:none;border-radius:4px">PDF</a></td></tr>';
+    });
+    body.innerHTML=h;
+    // 페이징
+    var totalPages=Math.max(1,Math.ceil(gwTotal/20));
+    var ph='<button class="pg-arrow" onclick="loadGwanbo('+Math.max(1,gwPage-1)+')"'+(gwPage===1?" disabled":"")+'>‹</button>';
+    var sp=Math.max(1,gwPage-3),ep=Math.min(totalPages,sp+6);
+    for(var i=sp;i<=ep;i++) ph+='<button class="pg-btn'+(i===gwPage?" active":"")+'" onclick="loadGwanbo('+i+')">'+i+'</button>';
+    ph+='<button class="pg-arrow" onclick="loadGwanbo('+Math.min(totalPages,gwPage+1)+')"'+(gwPage===totalPages?" disabled":"")+'>›</button>';
+    ph+='<span style="margin-left:10px;font-size:11px;color:var(--mu);font-weight:700">'+gwPage+'/'+totalPages+' ('+gwTotal+'건)</span>';
+    document.getElementById("gwPaging").innerHTML=ph;
+  }catch(ex){body.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--red)">'+esc(ex.message)+'</td></tr>';}
+}
+
 function esc(t){return(t||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 function fmtDate(d){if(!d||d.length<8)return d||"";return d.slice(4,6)+"-"+d.slice(6,8);}
 </script>
