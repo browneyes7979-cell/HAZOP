@@ -38,7 +38,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--tx)}
 .modal-body{padding:18px}
 .rpt-sec{margin-bottom:14px}.rpt-title{font-size:13px;font-weight:900;margin-bottom:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .rpt-box{background:#f8fafc;border:1px solid var(--bd);border-radius:8px;padding:12px;font-size:13px;line-height:1.8}
-.rpt-tbl{width:100%;border-collapse:collapse;font-size:12px;margin-top:6px;table-layout:fixed}.rpt-tbl th{background:#f1f5f9;padding:6px 8px;font-weight:700;border:1px solid var(--bd);text-align:center;word-break:keep-all}.rpt-tbl td{padding:6px 8px;border:1px solid var(--bd);vertical-align:top;line-height:1.6;word-break:break-all}
+.rpt-tbl{width:100%;border-collapse:collapse;font-size:12px;margin-top:6px;table-layout:fixed}.rpt-tbl th{background:#f1f5f9;padding:6px 8px;font-weight:700;border:1px solid var(--bd);text-align:center;word-break:keep-all}.rpt-tbl td{padding:6px 8px;border:1px solid var(--bd);vertical-align:top;line-height:1.6;word-break:keep-all;overflow-wrap:break-word}
 .petro-row{background:#fef3c7!important}.petro-badge{display:inline-block;background:var(--ora);color:#fff;font-size:9px;padding:1px 6px;border-radius:8px;font-weight:900;margin-left:4px}
 .deep-btn{padding:3px 8px;border:1px solid var(--p);border-radius:4px;background:#eff6ff;color:var(--p);font-size:10px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;white-space:nowrap}.deep-btn:hover{background:var(--p);color:#fff}
 .deep-sec{margin-bottom:12px;padding:12px;background:#f8fafc;border-left:3px solid var(--p);border-radius:6px}.deep-sec h4{font-size:13px;font-weight:900;color:var(--p);margin-bottom:6px}.deep-sec ul{list-style:none;padding:0}.deep-sec li{padding:4px 0;font-size:12px;line-height:1.7;border-bottom:1px dashed #e2e8f0}.deep-sec li:last-child{border-bottom:none}
@@ -226,7 +226,7 @@ function renderReport(pd,it){
   var ch=pd.변경비교표||[];
   if(ch.length){
     var pc=pd.석유화학관련건수||0;
-    h+='<div class="rpt-sec"><div class="rpt-title">📊 변경 비교표'+(pc>0?' <span style="background:var(--ora);color:#fff;font-size:10px;padding:2px 8px;border-radius:10px">🏭 석유화학 '+pc+'건</span>':"")+'</div><div style="overflow-x:auto"><table class="rpt-tbl"><thead><tr><th style="width:8%">조문</th><th style="width:28%">현행</th><th style="width:28%">개정</th><th style="width:7%">유형</th><th style="width:24%">영향</th><th style="width:5%">상세</th></tr></thead><tbody>';
+    h+='<div class="rpt-sec"><div class="rpt-title">📊 변경 비교표'+(pc>0?' <span style="background:var(--ora);color:#fff;font-size:10px;padding:2px 8px;border-radius:10px">🏭 석유화학 '+pc+'건</span>':"")+'</div><div style="overflow-x:auto"><table class="rpt-tbl"><thead><tr><th style="width:12%">조문</th><th style="width:26%">현행</th><th style="width:26%">개정</th><th style="width:7%">유형</th><th style="width:24%">영향</th><th style="width:5%">상세</th></tr></thead><tbody>';
     ch.forEach(function(c,ci){var ip=c.석유화학관련==="Y";
       h+='<tr'+(ip?' class="petro-row"':'')+'>'+
       '<td style="font-weight:700;white-space:nowrap"><a href="'+lawLink+'" target="_blank" style="color:var(--p);text-decoration:underline">'+esc(c.조문||"")+'</a>'+(ip?'<span class="petro-badge">🏭</span>':"")+'</td>'+
