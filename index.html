@@ -38,7 +38,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--tx)}
 .modal-body{padding:18px}
 .rpt-sec{margin-bottom:14px}.rpt-title{font-size:13px;font-weight:900;margin-bottom:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .rpt-box{background:#f8fafc;border:1px solid var(--bd);border-radius:8px;padding:12px;font-size:13px;line-height:1.8}
-.rpt-tbl{width:100%;border-collapse:collapse;font-size:12px;margin-top:6px;table-layout:fixed}.rpt-tbl th{background:#f1f5f9;padding:6px 8px;font-weight:700;border:1px solid var(--bd);text-align:center;word-break:keep-all}.rpt-tbl td{padding:6px 8px;border:1px solid var(--bd);vertical-align:top;line-height:1.6;word-break:keep-all;overflow-wrap:break-word}
+.rpt-tbl{width:100%;border-collapse:collapse;font-size:12px;margin-top:6px;table-layout:fixed}.rpt-tbl th{background:#f1f5f9;padding:6px 8px;font-weight:700;border:1px solid var(--bd);text-align:center}.rpt-tbl td{padding:6px 8px;border:1px solid var(--bd);vertical-align:top;line-height:1.6;overflow-wrap:break-word;overflow:hidden}
 .petro-row{background:#fef3c7!important}.petro-badge{display:inline-block;background:var(--ora);color:#fff;font-size:9px;padding:1px 6px;border-radius:8px;font-weight:900;margin-left:4px}
 .deep-btn{padding:3px 8px;border:1px solid var(--p);border-radius:4px;background:#eff6ff;color:var(--p);font-size:10px;font-weight:700;cursor:pointer;font-family:'Noto Sans KR',sans-serif;white-space:nowrap}.deep-btn:hover{background:var(--p);color:#fff}
 .deep-sec{margin-bottom:12px;padding:12px;background:#f8fafc;border-left:3px solid var(--p);border-radius:6px}.deep-sec h4{font-size:13px;font-weight:900;color:var(--p);margin-bottom:6px}.deep-sec ul{list-style:none;padding:0}.deep-sec li{padding:4px 0;font-size:12px;line-height:1.7;border-bottom:1px dashed #e2e8f0}.deep-sec li:last-child{border-bottom:none}
@@ -64,7 +64,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--tx)}
 <div id="panel2" style="display:none"><div class="card"><div class="lbl">입법 예고 (관보)</div><p style="font-size:13px;color:var(--mu)">관보 입법예고 연동은 추후 구현 예정입니다.</p></div></div>
 <div id="panel1">
 <div class="card"><div class="lbl">필터 키워드 설정</div><div id="kwList" class="kw-list"></div><div style="display:flex;gap:6px;margin-top:6px"><input id="kwInput" placeholder="키워드 추가" style="flex:1;padding:6px 10px;border:1px solid var(--bd);border-radius:6px;font-size:12px;outline:none"><button class="btn-sm btn-p" onclick="addKW()">추가</button><button class="btn-sm btn-g" onclick="saveKW()">저장</button></div></div>
-<div class="card"><div class="lbl">검색 · 필터</div><div class="filter-row"><div><label>법령명</label><input id="fNm" placeholder="검색어" oninput="applyFilter()"></div><div><label>종류</label><select id="fTp" onchange="applyFilter()"><option value="">전체</option><option value="법률">법률</option><option value="대통령령">시행령</option><option value="부령">시행규칙</option><option value="고시">고시</option><option value="공고">공고</option><option value="예규">예규</option></select></div><div><label>공포일(시작)</label><input id="fPdFrom" type="date" onchange="applyFilter()"></div><div><label>공포일(끝)</label><input id="fPdTo" type="date" onchange="applyFilter()"></div><div><label>시행일(시작)</label><input id="fEdFrom" type="date" onchange="applyFilter()"></div><div><label>시행일(끝)</label><input id="fEdTo" type="date" onchange="applyFilter()"></div><div style="align-self:flex-end"><button class="btn-sm btn-o" onclick="clearFilter()">초기화</button></div></div></div>
+<div class="card"><div class="lbl">검색 · 필터</div><div class="filter-row"><div><label>상위법</label><select id="fParent" onchange="applyFilter()"><option value="">전체</option><option value="대기환경보전법">대기환경보전법</option><option value="물환경보전법">물환경보전법</option><option value="화학물질관리법">화학물질관리법</option><option value="화학물질의 등록 및 평가">화학물질 등록·평가법</option><option value="산업안전보건법">산업안전보건법</option><option value="위험물안전관리법">위험물안전관리법</option><option value="소음·진동">소음·진동관리법</option><option value="악취방지법">악취방지법</option><option value="토양환경보전법">토양환경보전법</option><option value="환경영향평가법">환경영향평가법</option><option value="폐기물관리법">폐기물관리법</option><option value="자원순환">자원순환기본법</option><option value="온실가스">온실가스 배출권법</option><option value="탄소중립">탄소중립기본법</option><option value="환경오염시설">환경오염시설 통합관리법</option><option value="고압가스">고압가스 안전관리법</option><option value="중대재해">중대재해 처벌법</option><option value="하수도법">하수도법</option><option value="석면안전">석면안전관리법</option><option value="잔류성유기">잔류성유기오염물질법</option><option value="액화석유가스">액화석유가스법</option><option value="대기관리권역">대기관리권역 특별법</option></select></div><div><label>법령명</label><input id="fNm" placeholder="검색어" oninput="applyFilter()"></div><div><label>종류</label><select id="fTp" onchange="applyFilter()"><option value="">전체</option><option value="법률">법률</option><option value="대통령령">시행령</option><option value="부령">시행규칙</option><option value="고시">고시</option><option value="공고">공고</option><option value="예규">예규</option></select></div><div><label>공포일 이후</label><input id="fPdFrom" type="date" onchange="applyFilter()"></div><div><label>시행일 이후</label><input id="fEdFrom" type="date" onchange="applyFilter()"></div><div style="align-self:flex-end"><button class="btn-sm btn-o" onclick="clearFilter()">초기화</button></div></div></div>
 <div class="card"><div class="update-bar"><span id="updateTime">🔄 로딩 중...</span><button class="btn-sm btn-o" onclick="loadLawList()">새로고침</button><button class="btn-sm btn-o" onclick="exportXlsx()">📥 엑셀</button><button class="btn-sm btn-o" onclick="window.print()">🖨️ 인쇄</button></div>
 <div class="tbl-wrap"><table class="law-tbl"><thead><tr><th style="width:25%">법령명</th><th style="width:10%">종류/공포번호</th><th style="width:8%">구분</th><th style="width:9%">공포일</th><th style="width:9%">시행일</th><th style="width:39%">주요 개정 내용</th></tr></thead><tbody id="lawBody"><tr><td colspan="6" style="text-align:center;padding:30px;color:var(--mu)">법규 목록 로딩 중...</td></tr></tbody></table></div>
 <div class="paging" id="paging"></div></div>
@@ -110,17 +110,18 @@ async function loadLawList(){
 }
 
 function applyFilter(){
-  var fNm=(document.getElementById("fNm").value||"").trim().toLowerCase(),fTp=document.getElementById("fTp").value,fPdFrom=document.getElementById("fPdFrom").value.replace(/-/g,""),fPdTo=document.getElementById("fPdTo").value.replace(/-/g,""),fEdFrom=document.getElementById("fEdFrom").value.replace(/-/g,""),fEdTo=document.getElementById("fEdTo").value.replace(/-/g,"");
+  var fParent=document.getElementById("fParent").value,fNm=(document.getElementById("fNm").value||"").trim().toLowerCase(),fTp=document.getElementById("fTp").value,fPdFrom=document.getElementById("fPdFrom").value.replace(/-/g,""),fEdFrom=document.getElementById("fEdFrom").value.replace(/-/g,"");
   filteredItems=lawItems.filter(function(it){
+    if(fParent&&(it.nm||"").indexOf(fParent)<0) return false;
     if(fNm&&(it.nm||"").toLowerCase().indexOf(fNm)<0) return false;
     if(fTp){if(fTp==="부령"){if(it.tp==="대통령령"||it.tp==="법률")return false;if(!it.tp||(it.tp.indexOf("부령")<0&&it.tp!=="총리령"))return false;}else if(it.tp!==fTp) return false;}
-    var pd=(it.pd||"").replace(/-/g,"");if(fPdFrom&&pd<fPdFrom) return false;if(fPdTo&&pd>fPdTo) return false;
-    var ed=(it.ed||"").replace(/-/g,"");if(fEdFrom&&ed<fEdFrom) return false;if(fEdTo&&ed>fEdTo) return false;
+    var pd=(it.pd||"").replace(/-/g,"");if(fPdFrom&&pd<fPdFrom) return false;
+    var ed=(it.ed||"").replace(/-/g,"");if(fEdFrom&&ed<fEdFrom) return false;
     return true;
   });
   curPage=1;renderPage();
 }
-function clearFilter(){document.getElementById("fNm").value="";document.getElementById("fTp").value="";document.getElementById("fPdFrom").value="";document.getElementById("fPdTo").value="";document.getElementById("fEdFrom").value="";document.getElementById("fEdTo").value="";applyFilter();}
+function clearFilter(){document.getElementById("fParent").value="";document.getElementById("fNm").value="";document.getElementById("fTp").value="";document.getElementById("fPdFrom").value="";document.getElementById("fEdFrom").value="";applyFilter();}
 
 function renderPage(){
   var total=filteredItems.length,totalPages=Math.max(1,Math.ceil(total/PAGE_SIZE));
@@ -226,7 +227,7 @@ function renderReport(pd,it){
   var ch=pd.변경비교표||[];
   if(ch.length){
     var pc=pd.석유화학관련건수||0;
-    h+='<div class="rpt-sec"><div class="rpt-title">📊 변경 비교표'+(pc>0?' <span style="background:var(--ora);color:#fff;font-size:10px;padding:2px 8px;border-radius:10px">🏭 석유화학 '+pc+'건</span>':"")+'</div><div style="overflow-x:auto"><table class="rpt-tbl"><thead><tr><th style="width:12%">조문</th><th style="width:26%">현행</th><th style="width:26%">개정</th><th style="width:7%">유형</th><th style="width:24%">영향</th><th style="width:5%">상세</th></tr></thead><tbody>';
+    h+='<div class="rpt-sec"><div class="rpt-title">📊 변경 비교표'+(pc>0?' <span style="background:var(--ora);color:#fff;font-size:10px;padding:2px 8px;border-radius:10px">🏭 석유화학 '+pc+'건</span>':"")+'</div><div style="overflow-x:auto"><table class="rpt-tbl"><thead><tr><th style="width:15%">조문</th><th style="width:25%">현행</th><th style="width:25%">개정</th><th style="width:6%">유형</th><th style="width:24%">영향</th><th style="width:5%">상세</th></tr></thead><tbody>';
     ch.forEach(function(c,ci){var ip=c.석유화학관련==="Y";
       h+='<tr'+(ip?' class="petro-row"':'')+'>'+
       '<td style="font-weight:700;white-space:nowrap"><a href="'+lawLink+'" target="_blank" style="color:var(--p);text-decoration:underline">'+esc(c.조문||"")+'</a>'+(ip?'<span class="petro-badge">🏭</span>':"")+'</td>'+
