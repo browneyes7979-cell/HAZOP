@@ -62,12 +62,17 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--tx)}
 </div>
 <div class="wrap">
 <div id="panel2" style="display:none">
-<div class="card"><div class="lbl">입법 예고 (관보)</div>
+<div class="card"><div class="lbl">필터 키워드 설정 (입법예고 공통)</div>
+<div id="kwList2" class="kw-list"></div>
+<p style="font-size:10px;color:var(--mu);margin-top:4px">※ 최근 시행법령 탭과 동일한 키워드가 적용됩니다. 키워드 편집은 최근 시행법령 탭에서 가능합니다.</p>
+</div>
+<div class="card"><div class="lbl">입법 예고 (관보) — 환경/안전 필터 적용</div>
 <div class="filter-row">
+  <div><label>상위법</label><select id="gwParent" onchange="loadGwanbo()"><option value="">전체</option><option value="대기환경보전법">대기환경보전법</option><option value="물환경보전법">물환경보전법</option><option value="화학물질관리법">화학물질관리법</option><option value="산업안전보건법">산업안전보건법</option><option value="위험물안전관리법">위험물안전관리법</option><option value="소음·진동">소음·진동관리법</option><option value="악취방지법">악취방지법</option><option value="토양환경보전법">토양환경보전법</option><option value="환경영향평가법">환경영향평가법</option><option value="폐기물관리법">폐기물관리법</option><option value="온실가스">온실가스 배출권법</option><option value="탄소중립">탄소중립기본법</option><option value="고압가스">고압가스 안전관리법</option><option value="중대재해">중대재해 처벌법</option><option value="하수도법">하수도법</option></select></div>
   <div><label>검색어</label><input id="gwSearch" placeholder="법령명/기관명" style="width:160px"></div>
   <div><label>시작일</label><input id="gwFrom" type="date"></div>
   <div><label>종료일</label><input id="gwTo" type="date"></div>
-  <div style="align-self:flex-end"><button class="btn-sm btn-p" onclick="loadGwanbo()">🔍 조회</button></div>
+  <div style="align-self:flex-end"><button class="btn-sm btn-p" onclick="loadGwanbo()">🔍 조회</button><button class="btn-sm btn-o" onclick="clearGwFilter()" style="margin-left:4px">초기화</button></div>
 </div>
 <div class="update-bar"><span id="gwInfo">환경/안전 관련 입법예고만 필터링하여 조회합니다.</span></div>
 <div class="tbl-wrap">
@@ -95,9 +100,9 @@ var GAS="https://script.google.com/macros/s/AKfycbwfKDBdrd6SbTaCjj5mRtA2CFEwfZAn
 var staffData=[],kwData=[],lawItems=[],filteredItems=[],curPage=1,PAGE_SIZE=50,curReportLaw=null,curReportData=null;
 
 function jp(p,cb,ms){return new Promise(function(res,rej){var old=document.getElementById("__"+cb);if(old)old.remove();var t=setTimeout(function(){delete window[cb];rej(new Error("응답없음"));},ms);window[cb]=function(d){clearTimeout(t);delete window[cb];res(d);};var s=document.createElement("script");s.id="__"+cb;s.src=GAS+"?"+Object.keys(p).map(function(k){return k+"="+encodeURIComponent(p[k]);}).join("&");document.body.appendChild(s);});}
-function switchTab(n){for(var i=1;i<=3;i++){document.getElementById("panel"+i).style.display=i===n?"block":"none";document.getElementById("tab"+i).className="tab"+(i===n?" active":"");}}
+function switchTab(n){for(var i=1;i<=3;i++){document.getElementById("panel"+i).style.display=i===n?"block":"none";document.getElementById("tab"+i).className="tab"+(i===n?" active":"");}if(n===2&&typeof renderKW2==="function")renderKW2();}
 window.onload=function(){
-  loadKW();loadStaff();loadLawList();
+  loadKW();loadStaff();loadLawList();setTimeout(renderKW2,500);
   // 관보 기본 2달
   var d=new Date();d.setMonth(d.getMonth()-2);
   document.getElementById("gwFrom").value=d.toISOString().slice(0,10);
@@ -299,7 +304,11 @@ function renderDeep(pd){
 function closeDeep(){document.getElementById("deepModal").style.display="none";}
 function closeModal(){document.getElementById("reportModal").style.display="none";}
 // ── 관보 입법예고 ──
-var gwPage=1,gwTotal=0;
+// ── Tab2 키워드 표시 ──
+function renderKW2(){var h="";kwData.forEach(function(kw){h+='<span class="kw-tag">'+esc(kw)+'</span>';});document.getElementById("kwList2").innerHTML=h||'<span style="font-size:11px;color:var(--mu)">키워드 없음 — 최근 시행법령 탭에서 추가하세요</span>';}
+function clearGwFilter(){document.getElementById("gwParent").value="";document.getElementById("gwSearch").value="";var d=new Date();d.setMonth(d.getMonth()-2);document.getElementById("gwFrom").value=d.toISOString().slice(0,10);document.getElementById("gwTo").value=new Date().toISOString().slice(0,10);loadGwanbo();}
+
+var gwPage=1,gwTotal=0,gwAllItems=[];
 async function loadGwanbo(page){
   gwPage=page||1;
   var body=document.getElementById("gwBody");
@@ -316,8 +325,15 @@ async function loadGwanbo(page){
     if(d.error){body.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--red)">'+esc(d.error)+'</td></tr>';return;}
     gwTotal=d.totalCount||0;
     var items=d.items||[];
-    document.getElementById("gwInfo").textContent="환경/안전 필터 적용 | "+gwTotal+"건"+(d.filtered?" (필터됨)":"");
-    if(!items.length){body.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--mu)">조회 결과 없음</td></tr>';return;}
+    gwAllItems=items;
+    // 클라이언트 필터: 상위법 + 검색어
+    var gwPar=document.getElementById("gwParent").value;
+    if(gwPar){items=items.filter(function(it){return(it.title||"").indexOf(gwPar)>=0||(it.law||"").indexOf(gwPar)>=0;});}
+    var gwSrch=(document.getElementById("gwSearch").value||"").trim().toLowerCase();
+    if(gwSrch){items=items.filter(function(it){return((it.title||"")+(it.org||"")+(it.law||"")).toLowerCase().indexOf(gwSrch)>=0;});}
+    gwTotal=items.length;
+    document.getElementById("gwInfo").textContent="환경/안전 필터 적용 | "+items.length+"건"+(d.filtered?" (서버필터)":"");
+    if(!items.length){body.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--mu)">환경/안전 관련 입법예고 없음</td></tr>';document.getElementById("gwPaging").innerHTML="";return;}
     var h="";
     items.forEach(function(it){
       h+='<tr><td style="font-size:10px;white-space:nowrap">'+esc(it.date)+'</td>'+
