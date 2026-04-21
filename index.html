@@ -69,7 +69,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--tx)}
   <div><label>종료일</label><input id="gwTo" type="date"></div>
   <div style="align-self:flex-end"><button class="btn-sm btn-p" onclick="loadGwanbo()">🔍 조회</button></div>
 </div>
-<div class="update-bar"><span id="gwInfo">최근 3개월 입법예고를 조회합니다.</span></div>
+<div class="update-bar"><span id="gwInfo">환경/안전 관련 입법예고만 필터링하여 조회합니다.</span></div>
 <div class="tbl-wrap">
 <table class="law-tbl"><thead><tr><th style="width:8%">발행일</th><th style="width:10%">발행기관</th><th style="width:52%">제목</th><th style="width:15%">근거법령</th><th style="width:8%">구분</th><th style="width:7%">원문</th></tr></thead>
 <tbody id="gwBody"><tr><td colspan="6" style="text-align:center;padding:30px;color:var(--mu)">🔍 조회 버튼을 클릭하세요</td></tr></tbody>
@@ -91,7 +91,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--tx)}
 <div class="modal" id="deepModal"><div class="modal-box"><div class="modal-head"><h3 id="deepTitle">🔍 심층 분석</h3><button class="modal-close" onclick="closeDeep()">✕ 닫기</button></div><div class="modal-body"><div id="deepBody"></div><div id="deepMeta" style="font-size:11px;color:var(--mu);margin-top:12px;padding-top:10px;border-top:1px solid var(--bd)"></div></div></div></div>
 
 <script>
-var GAS="https://script.google.com/macros/s/AKfycbzqcdVX32owJ8O1CqmsTz81WlaaNeUhAy4OkSrYys3o_Yt0LPjbf0m0g2UPE9t2mfEMxQ/exec";
+var GAS="https://script.google.com/macros/s/AKfycbwfKDBdrd6SbTaCjj5mRtA2CFEwfZAnDKXxmhQxJu1incvs9XwZEH68iDQSW-wrHIfpOw/exec";
 var staffData=[],kwData=[],lawItems=[],filteredItems=[],curPage=1,PAGE_SIZE=50,curReportLaw=null,curReportData=null;
 
 function jp(p,cb,ms){return new Promise(function(res,rej){var old=document.getElementById("__"+cb);if(old)old.remove();var t=setTimeout(function(){delete window[cb];rej(new Error("응답없음"));},ms);window[cb]=function(d){clearTimeout(t);delete window[cb];res(d);};var s=document.createElement("script");s.id="__"+cb;s.src=GAS+"?"+Object.keys(p).map(function(k){return k+"="+encodeURIComponent(p[k]);}).join("&");document.body.appendChild(s);});}
@@ -116,7 +116,7 @@ async function loadStaff(){try{var d=await jp({action:"getStaff",callback:"__gs"
 function renderKW(){var h="";kwData.forEach(function(kw,i){h+='<span class="kw-tag">'+esc(kw)+'<span class="kw-del" onclick="delKW('+i+')">×</span></span>';});document.getElementById("kwList").innerHTML=h;}
 function addKW(){var v=document.getElementById("kwInput").value.trim();if(v&&kwData.indexOf(v)<0){kwData.push(v);renderKW();document.getElementById("kwInput").value="";}}
 function delKW(i){kwData.splice(i,1);renderKW();}
-async function saveKW(){try{await jp({action:"saveFilterKW",data:JSON.stringify(kwData),callback:"__skw"},"__skw",10000);alert("키워드 저장 완료");}catch(ex){alert("실패");}}
+async function saveKW(){try{await jp({action:"saveFilterKW",data:JSON.stringify(kwData),callback:"__skw"},"__skw",10000);alert("키워드 저장 완료 — 목록 재스캔 중...");document.getElementById("lawBody").innerHTML='<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--p);font-weight:700"><div class="spin" style="border-color:#bfdbfe;border-top-color:var(--p);margin:0 auto 8px"></div>키워드 반영 재스캔 중...</td></tr>';var d=await jp({action:"rescan",callback:"__rs"},"__rs",90000);lawItems=d.items||[];applyFilter();document.getElementById("updateTime").textContent="🔄 "+new Date().toLocaleString("ko-KR",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"})+" | "+lawItems.length+"건 (키워드 반영)";}catch(ex){alert("실패: "+ex.message);}}
 async function loadKW(){try{var d=await jp({action:"getFilterKW",callback:"__gkw"},"__gkw",10000);kwData=d.keywords||[];renderKW();}catch(ex){kwData=["대기","수질","화학물질","산업안전","위험물","소음","진동","악취","토양","환경영향","폐기물","배출","온실가스","공정시험"];renderKW();}}
 
 // ── 법규 목록 ──
@@ -307,7 +307,7 @@ async function loadGwanbo(page){
   var search=document.getElementById("gwSearch").value.trim();
   var from=document.getElementById("gwFrom").value.replace(/-/g,"");
   var to=document.getElementById("gwTo").value.replace(/-/g,"");
-  var params={action:"gwanbo",pageNo:String(gwPage),pageSize:"20",callback:"__gw"};
+  var params={action:"gwanbo",pageNo:String(gwPage),pageSize:"50",envFilter:"on",callback:"__gw"};
   if(from) params.reqFrom=from;
   if(to) params.reqTo=to;
   if(search) params.search=search;
@@ -316,7 +316,7 @@ async function loadGwanbo(page){
     if(d.error){body.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--red)">'+esc(d.error)+'</td></tr>';return;}
     gwTotal=d.totalCount||0;
     var items=d.items||[];
-    document.getElementById("gwInfo").textContent="총 "+gwTotal+"건 | "+items.length+"건 표시";
+    document.getElementById("gwInfo").textContent="환경/안전 필터 적용 | "+gwTotal+"건"+(d.filtered?" (필터됨)":"");
     if(!items.length){body.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--mu)">조회 결과 없음</td></tr>';return;}
     var h="";
     items.forEach(function(it){
