@@ -77,8 +77,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--tx)}
 </div>
 <div class="update-bar"><span id="gwInfo">환경/안전 관련 입법예고만 필터링하여 조회합니다.</span></div>
 <div class="tbl-wrap">
-<table class="law-tbl"><thead><tr><th style="width:8%">발행일</th><th style="width:10%">발행기관</th><th style="width:52%">제목</th><th style="width:15%">근거법령</th><th style="width:8%">구분</th><th style="width:7%">원문</th></tr></thead>
-<tbody id="gwBody"><tr><td colspan="6" style="text-align:center;padding:30px;color:var(--mu)">🔍 조회 버튼을 클릭하세요</td></tr></tbody>
+<table class="law-tbl"><thead><tr><th style="width:7%">발행일</th><th style="width:9%">발행기관</th><th style="width:44%">제목</th><th style="width:14%">근거법령</th><th style="width:7%">구분</th><th style="width:6%">원문</th><th style="width:13%">AI분석</th></tr></thead>
+<tbody id="gwBody"><tr><td colspan="7" style="text-align:center;padding:30px;color:var(--mu)">🔍 조회 버튼을 클릭하세요</td></tr></tbody>
 </table></div>
 <div class="paging" id="gwPaging"></div>
 </div></div>
@@ -319,7 +319,7 @@ var gwPage=1,gwTotal=0,gwAllItems=[],gwFiltered=[],GW_PS=20;
 async function loadGwanbo(){
   gwPage=1;gwAllItems=[];gwFiltered=[];
   var body=document.getElementById("gwBody");
-  body.innerHTML='<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--p);font-weight:700"><div class="spin" style="border-color:#bfdbfe;border-top-color:var(--p);margin:0 auto 8px"></div>환경/안전 키워드별 입법예고 수집 중...</td></tr>';
+  body.innerHTML='<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--p);font-weight:700"><div class="spin" style="border-color:#bfdbfe;border-top-color:var(--p);margin:0 auto 8px"></div>환경/안전 키워드별 입법예고 수집 중...</td></tr>';
   var params={action:"gwanbo",envFilter:"on",callback:"__gw"};
   var from=document.getElementById("gwFrom").value.replace(/-/g,"");
   var to=document.getElementById("gwTo").value.replace(/-/g,"");
@@ -329,10 +329,10 @@ async function loadGwanbo(){
   if(search) params.search=search;
   try{
     var d=await jp(params,"__gw",90000);
-    if(d.error){body.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--red)">'+esc(d.error)+'</td></tr>';return;}
+    if(d.error){body.innerHTML='<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--red)">'+esc(d.error)+'</td></tr>';return;}
     gwAllItems=d.items||[];
     applyGwFilter();
-  }catch(ex){body.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--red)">'+esc(ex.message)+'</td></tr>';}
+  }catch(ex){body.innerHTML='<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--red)">'+esc(ex.message)+'</td></tr>';}
 }
 
 function applyGwFilter(){
@@ -353,15 +353,17 @@ function renderGwPage(page){
   var start=(gwPage-1)*GW_PS;
   var items=gwFiltered.slice(start,start+GW_PS);
   var body=document.getElementById("gwBody");
-  if(!items.length){body.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--mu)">환경/안전 관련 입법예고 없음</td></tr>';document.getElementById("gwPaging").innerHTML="";return;}
+  if(!items.length){body.innerHTML='<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--mu)">환경/안전 관련 입법예고 없음</td></tr>';document.getElementById("gwPaging").innerHTML="";return;}
   var h="";
-  items.forEach(function(it){
+  items.forEach(function(it,idx){
+    var gi=start+idx;
     h+='<tr><td style="font-size:10px;white-space:nowrap">'+esc(it.date)+'</td>'+
       '<td style="font-size:11px;font-weight:700">'+esc(it.org)+'</td>'+
       '<td><a href="'+esc(it.pdf)+'" target="_blank" style="color:var(--p);font-weight:700;text-decoration:underline;font-size:12px">'+esc(it.title)+'</a></td>'+
       '<td style="font-size:10px;color:var(--mu)">'+esc(it.law)+'</td>'+
       '<td style="font-size:10px;text-align:center">'+esc(it.type)+'</td>'+
-      '<td style="text-align:center"><a href="'+esc(it.pdf)+'" target="_blank" class="btn-sm" style="padding:4px 8px;font-size:10px;background:var(--p);color:#fff;text-decoration:none;border-radius:4px">PDF</a></td></tr>';
+      '<td style="text-align:center"><a href="'+esc(it.pdf)+'" target="_blank" class="btn-sm" style="padding:4px 8px;font-size:10px;background:var(--p);color:#fff;text-decoration:none;border-radius:4px">PDF</a></td>'+
+      '<td style="text-align:center"><button class="btn-sm" id="gwAi'+gi+'" style="padding:4px 10px;font-size:10px;background:var(--ora);color:#fff;border-radius:4px;white-space:nowrap" onclick="gwAnalyze('+gi+')">🤖 분석</button></td></tr>';
   });
   body.innerHTML=h;
   var ph='<button class="pg-arrow" onclick="renderGwPage('+Math.max(1,gwPage-1)+')"'+(gwPage===1?" disabled":"")+'>‹</button>';
@@ -370,6 +372,57 @@ function renderGwPage(page){
   ph+='<button class="pg-arrow" onclick="renderGwPage('+Math.min(totalPages,gwPage+1)+')"'+(gwPage===totalPages?" disabled":"")+'>›</button>';
   ph+='<span style="margin-left:10px;font-size:11px;color:var(--mu);font-weight:700">'+gwPage+'/'+totalPages+' ('+gwFiltered.length+'건)</span>';
   document.getElementById("gwPaging").innerHTML=ph;
+}
+
+// ── 입법예고 AI 분석 ──
+var curGwItem=null;
+async function gwAnalyze(gi){
+  var it=gwFiltered[gi];if(!it)return;curGwItem=it;
+  var btn=document.getElementById("gwAi"+gi);
+  if(btn){btn.disabled=true;btn.innerHTML='<div class="spin" style="width:12px;height:12px;border-width:2px;border-color:rgba(255,255,255,.3);border-top-color:#fff"></div>';}
+  var modal=document.getElementById("reportModal"),body=document.getElementById("rptBody"),meta=document.getElementById("rptMeta");
+  document.getElementById("rptTitle").textContent="📢 "+it.title;
+  document.getElementById("fbText").value="";
+  modal.style.display="block";
+  body.innerHTML='<div style="text-align:center;padding:30px;color:var(--p);font-weight:700"><div class="spin" style="border-color:#bfdbfe;border-top-color:var(--p);margin:0 auto 8px"></div>PDF 추출 + AI 분석 중... (최대 120초)</div>';
+  meta.textContent="";
+  try{
+    var d=await jp({action:"analyzeGwanbo",title:it.title,pdfUrl:it.pdf,org:it.org,callback:"__agw"},"__agw",120000);
+    if(d.error){body.innerHTML='<div style="color:var(--red);padding:20px">분석 실패: '+esc(d.error)+'</div>';return;}
+    var rpt=d.report||{};curReportData=rpt;
+    body.innerHTML=renderGwReport(rpt.data||{},it,rpt.hasPdf);
+    meta.textContent=(d.cached?"💾 캐시":"🤖 AI")+" · "+(rpt.model||"")+" · "+(rpt.date||"")+(rpt.hasPdf?" · 📄 PDF원문기반":" · ⚠️ 제목기반추정");
+  }catch(ex){body.innerHTML='<div style="color:var(--red);padding:20px">오류: '+esc(ex.message)+'</div>';}
+  finally{if(btn){btn.disabled=false;btn.innerHTML="🤖 분석";}}
+}
+
+function renderGwReport(pd,it,hasPdf){
+  var h="";
+  // 0. PDF 상태
+  if(!hasPdf) h+='<div style="background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:10px;margin-bottom:12px;font-size:12px;color:#92400e;font-weight:700">⚠️ PDF 원문 추출 실패 — 제목 기반 추정 분석입니다. 정확도가 낮을 수 있습니다.</div>';
+  // 1. 사업장 해당
+  var rel=pd.사업장해당여부||{};
+  if(rel.해당){var isY=rel.해당==="Y";h+='<div class="rpt-sec"><div class="rpt-title">'+(isY?"🔴":"🟢")+' 사업장 해당: <span style="color:'+(isY?"var(--red)":"var(--grn)")+'">'+esc(rel.해당)+'</span></div><div class="rpt-box">'+esc(rel.근거||"")+'</div></div>';}
+  // 2. 핵심변경
+  if(pd.핵심변경사항) h+='<div class="rpt-sec"><div class="rpt-title">⚡ 핵심 변경사항</div><div class="rpt-box" style="background:#eff6ff;border-color:#bfdbfe;font-weight:700">'+esc(pd.핵심변경사항)+'</div></div>';
+  // 3. 예상시행일
+  if(pd.예상시행일&&pd.예상시행일!=="미정") h+='<div class="rpt-sec"><div class="rpt-title">📅 예상 시행일</div><div class="rpt-box" style="background:#fef3c7;border-color:#fde68a;color:#92400e;font-weight:700">'+esc(pd.예상시행일)+'</div></div>';
+  // 4. 현업추진업무
+  var tasks=pd.현업추진업무||[];
+  if(tasks.length){h+='<div class="rpt-sec"><div class="rpt-title">🔧 현업 추진 업무</div><div style="overflow-x:auto"><table class="rpt-tbl"><thead><tr><th>업무</th><th>세부내용</th><th>담당</th><th>기한</th></tr></thead><tbody>';
+    tasks.forEach(function(t){h+='<tr><td style="font-weight:700">'+esc(t.업무||"")+'</td><td>'+esc(t.세부내용||"")+'</td><td style="white-space:nowrap">'+esc(t.담당||"환경안전팀")+'</td><td style="white-space:nowrap">'+esc(t.기한||"")+'</td></tr>';});
+    h+='</tbody></table></div></div>';}
+  // 5. 개정사유
+  if(pd.개정사유) h+='<div class="rpt-sec"><div class="rpt-title">📌 개정 사유</div><div class="rpt-box" style="font-size:12px;color:#475569">'+esc(pd.개정사유)+'</div></div>';
+  // 6. 변경비교표
+  var ch=pd.변경비교표||[];
+  if(ch.length){h+='<div class="rpt-sec"><div class="rpt-title">📊 변경 비교표</div><div style="overflow-x:auto"><table class="rpt-tbl"><thead><tr><th style="width:12%">조문</th><th style="width:28%">현행</th><th style="width:28%">개정</th><th style="width:8%">유형</th><th style="width:24%">영향</th></tr></thead><tbody>';
+    ch.forEach(function(c){h+='<tr><td style="font-weight:700;white-space:nowrap">'+esc(c.조문||"")+'</td><td>'+esc(c.현행||"")+'</td><td>'+esc(c.개정||"")+'</td><td style="text-align:center">'+esc(c.유형||"")+'</td><td>'+esc(c.영향||"")+'</td></tr>';});
+    h+='</tbody></table></div></div>';}
+  // 7. 별표참고
+  if(pd.별표참고&&pd.별표참고!=="해당없음"&&pd.별표참고!=="") h+='<div class="rpt-sec"><div class="rpt-title">⚠️ 별표·별지 참고</div><div class="rpt-box" style="background:#fff7ed;border-color:#fed7aa;color:#9a3412">'+esc(pd.별표참고)+'</div></div>';
+  if(!h) h='<div style="color:var(--mu);text-align:center;padding:20px">분석 데이터 없음</div>';
+  return h;
 }
 
 function esc(t){return(t||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
