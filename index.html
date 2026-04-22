@@ -98,7 +98,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--tx)}
 <div class="modal" id="deepModal"><div class="modal-box"><div class="modal-head"><h3 id="deepTitle">🔍 심층 분석</h3><button class="modal-close" onclick="closeDeep()">✕ 닫기</button></div><div class="modal-body"><div id="deepBody"></div><div id="deepMeta" style="font-size:11px;color:var(--mu);margin-top:12px;padding-top:10px;border-top:1px solid var(--bd)"></div></div></div></div>
 
 <script>
-var GAS="https://script.google.com/macros/s/AKfycbyJOGPkEtwi5-LbIcQY6rtFSQB8ByggGupcCMpDqFFbnkmUUSY4r1G5K4cy3ro7Mqmarw/exec";
+var GAS="https://script.google.com/macros/s/AKfycbzs2UrCkZ1SA8Rb-UK04d71znPOkcdilncErx1VV5auM1L94dxzMbkb_1PrCm5lbjnkPg/exec";
 var staffData=[],kwData=[],lawItems=[],filteredItems=[],curPage=1,PAGE_SIZE=50,curReportLaw=null,curReportData=null;
 
 function jp(p,cb,ms){return new Promise(function(res,rej){var old=document.getElementById("__"+cb);if(old)old.remove();var t=setTimeout(function(){delete window[cb];rej(new Error("응답없음"));},ms);window[cb]=function(d){clearTimeout(t);delete window[cb];res(d);};var s=document.createElement("script");s.id="__"+cb;s.src=GAS+"?"+Object.keys(p).map(function(k){return k+"="+encodeURIComponent(p[k]);}).join("&");document.body.appendChild(s);});}
@@ -122,7 +122,7 @@ async function loadStaff(){try{var d=await jp({action:"getStaff",callback:"__gs"
 // ── 키워드 ──
 function renderKW(){var h="";kwData.forEach(function(kw,i){h+='<span class="kw-tag">'+esc(kw)+'<span class="kw-del" onclick="delKW('+i+')">×</span></span>';});document.getElementById("kwList").innerHTML=h;}
 var EX_KW=["119구조","112치안","선거","국방","외교","교육과정","보훈","귀화","병역","부동산","주택","건강보험","국민연금","의료급여","수산자원","산림자원","해외자원","원자력","방사선","방사성","아동","노인복지","장애인","여성","저출산","양육"];
-function addKW(){var v=document.getElementById("kwInput").value.trim();if(!v)return;for(var i=0;i<EX_KW.length;i++){if(v.indexOf(EX_KW[i])>=0||EX_KW[i].indexOf(v)>=0){alert("⚠️ '"+v+"' → 제외 대상 '"+EX_KW[i]+"'와 겹칩니다.\n이 키워드 포함 법규는 자동 제외됩니다.\n\n[제외 키워드]\n"+EX_KW.join(", "));return;}}if(kwData.indexOf(v)<0){kwData.push(v);renderKW();if(typeof renderKW2==="function")renderKW2();document.getElementById("kwInput").value="";}}
+function addKW(){var v=document.getElementById("kwInput").value.trim();if(!v)return;if(kwData.indexOf(v)>=0){alert("이미 추가된 키워드입니다.");return;}kwData.push(v);renderKW();if(typeof renderKW2==="function")renderKW2();document.getElementById("kwInput").value="";alert("✅ '"+v+"' 키워드 추가됨\n\n⚠️ 아래 제외 키워드가 법규명에 포함되면 목록에서 자동 제외됩니다:\n"+EX_KW.join(", ")+"\n\n※ 저장 후 🔄재스캔 버튼을 눌러야 목록에 반영됩니다.");}
 function delKW(i){kwData.splice(i,1);renderKW();}
 async function saveKW(){try{await jp({action:"saveFilterKW",data:JSON.stringify(kwData),callback:"__skw"},"__skw",10000);renderKW();if(typeof renderKW2==="function")renderKW2();alert("키워드 저장 완료. 반영하려면 🔄재스캔 버튼을 눌러주세요.");}catch(ex){alert("저장 실패");}}
 async function rescanLaw(){if(!confirm("법규 목록을 처음부터 다시 수집합니다. 1~2분 소요됩니다. 진행할까요?"))return;document.getElementById("lawBody").innerHTML='<tr><td colspan="6" style="text-align:center;padding:30px;color:var(--p);font-weight:700"><div class="spin" style="border-color:#bfdbfe;border-top-color:var(--p);margin:0 auto 8px"></div>키워드 반영 재스캔 중... (1~2분 소요)</td></tr>';try{var d=await jp({action:"rescan",callback:"__rs"},"__rs",180000);lawItems=d.items||[];applyFilter();document.getElementById("updateTime").textContent="🔄 "+new Date().toLocaleString("ko-KR",{month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"})+" | "+lawItems.length+"건 (재스캔 완료)";alert("재스캔 완료: "+lawItems.length+"건");}catch(ex){alert("재스캔 실패: "+ex.message);loadLawList();}}
@@ -310,7 +310,7 @@ function closeModal(){document.getElementById("reportModal").style.display="none
 // ── 관보 입법예고 ──
 // ── Tab2 키워드 표시+편집 ──
 function renderKW2(){var h="";kwData.forEach(function(kw,i){h+='<span class="kw-tag">'+esc(kw)+'<span class="kw-del" onclick="delKW2('+i+')">×</span></span>';});document.getElementById("kwList2").innerHTML=h||'<span style="font-size:11px;color:var(--mu)">키워드 없음</span>';}
-function addKW2(){var v=document.getElementById("kwInput2").value.trim();if(!v)return;for(var i=0;i<EX_KW.length;i++){if(v.indexOf(EX_KW[i])>=0||EX_KW[i].indexOf(v)>=0){alert("⚠️ '"+v+"' → 제외 대상 '"+EX_KW[i]+"'와 겹칩니다.");return;}}if(kwData.indexOf(v)<0){kwData.push(v);renderKW();renderKW2();document.getElementById("kwInput2").value="";}}
+function addKW2(){var v=document.getElementById("kwInput2").value.trim();if(!v)return;if(kwData.indexOf(v)>=0){alert("이미 추가된 키워드입니다.");return;}kwData.push(v);renderKW();renderKW2();document.getElementById("kwInput2").value="";alert("✅ '"+v+"' 키워드 추가됨\n\n⚠️ 제외 키워드 목록:\n"+EX_KW.join(", ")+"\n\n※ 저장 후 🔄재스캔 버튼을 눌러야 반영됩니다.");}
 function delKW2(i){kwData.splice(i,1);renderKW();renderKW2();}
 function clearGwFilter(){document.getElementById("gwParent").value="";document.getElementById("gwSearch").value="";var d=new Date();d.setMonth(d.getMonth()-2);document.getElementById("gwFrom").value=d.toISOString().slice(0,10);document.getElementById("gwTo").value=new Date().toISOString().slice(0,10);loadGwanbo();}
 
