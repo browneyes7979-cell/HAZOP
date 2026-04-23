@@ -98,7 +98,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--tx)}
 <div class="modal" id="deepModal"><div class="modal-box"><div class="modal-head"><h3 id="deepTitle">🔍 심층 분석</h3><button class="modal-close" onclick="closeDeep()">✕ 닫기</button></div><div class="modal-body"><div id="deepBody"></div><div id="deepMeta" style="font-size:11px;color:var(--mu);margin-top:12px;padding-top:10px;border-top:1px solid var(--bd)"></div></div></div></div>
 
 <script>
-var GAS="https://script.google.com/macros/s/AKfycbyWhokLwX7qx6ynX7UTdbyKoPVbFAZ-s-SeGLXXdQ_yqYt1thQmeuCiPm7yFGBpUzUL0g/exec";
+var GAS="https://script.google.com/macros/s/AKfycbxBK950sgAgVctyQA6zdumwTbJ3axbrkJpxt2m0SydRg_p7v9z9_GFmP7hY1_99Oi5KFw/exec";
 var staffData=[],kwData=[],lawItems=[],filteredItems=[],curPage=1,PAGE_SIZE=50,curReportLaw=null,curReportData=null;
 
 function jp(p,cb,ms){return new Promise(function(res,rej){var old=document.getElementById("__"+cb);if(old)old.remove();var t=setTimeout(function(){delete window[cb];rej(new Error("응답없음"));},ms);window[cb]=function(d){clearTimeout(t);delete window[cb];res(d);};var s=document.createElement("script");s.id="__"+cb;s.src=GAS+"?"+Object.keys(p).map(function(k){return k+"="+encodeURIComponent(p[k]);}).join("&");document.body.appendChild(s);});}
@@ -377,23 +377,13 @@ function renderGwPage(page){
 // ── 입법예고 AI 분석 ──
 var curGwItem=null;
 async function gwAnalyze(gi){
-  var it=gwFiltered[gi];if(!it)return;curGwItem=it;
-  var btn=document.getElementById("gwAi"+gi);
-  if(btn){btn.disabled=true;btn.innerHTML='<div class="spin" style="width:12px;height:12px;border-width:2px;border-color:rgba(255,255,255,.3);border-top-color:#fff"></div>';}
+  var it=gwFiltered[gi];if(!it)return;
   var modal=document.getElementById("reportModal"),body=document.getElementById("rptBody"),meta=document.getElementById("rptMeta");
-  document.getElementById("rptTitle").textContent="📢 "+it.title;
+  document.getElementById("rptTitle").textContent="\ud83d\udce2 "+it.title;
   document.getElementById("fbText").value="";
   modal.style.display="block";
-  body.innerHTML='<div style="text-align:center;padding:30px;color:var(--p);font-weight:700"><div class="spin" style="border-color:#bfdbfe;border-top-color:var(--p);margin:0 auto 8px"></div>PDF 추출 + AI 분석 중... (최대 120초)</div>';
-  meta.textContent="";
-  try{
-    var d=await jp({action:"analyzeGwanbo",title:it.title,pdfUrl:it.pdf,org:it.org,lawName:it.law||"",callback:"__agw"},"__agw",120000);
-    if(d.error){body.innerHTML='<div style="color:var(--red);padding:20px">분석 실패: '+esc(d.error)+'</div>';return;}
-    var rpt=d.report||{};curReportData=rpt;
-    body.innerHTML=renderGwReport(rpt.data||{},it,rpt.hasPdf);
-    meta.textContent=(d.cached?"💾 캐시":"🤖 AI")+" · "+(rpt.model||"")+" · "+(rpt.date||"")+(rpt.hasPdf?" · 📄 PDF원문기반":" · ⚠️ PDF미추출")+(rpt.hasCurrentLaw?" · ✅ 현행법비교":" · 현행법미확인")+(rpt.lawName?" · "+rpt.lawName:"");
-  }catch(ex){body.innerHTML='<div style="color:var(--red);padding:20px">오류: '+esc(ex.message)+'</div>';}
-  finally{if(btn){btn.disabled=false;btn.innerHTML="🤖 분석";}}
+  body.innerHTML='<div style="text-align:center;padding:40px"><div style="font-size:48px;margin-bottom:16px">\ud83d\udea7</div><div style="font-size:16px;font-weight:900;color:var(--tx);margin-bottom:12px">\uc785\ubc95\uc608\uace0 \uc0c1\uc138 \ubd84\uc11d \uae30\ub2a5 \uad6c\ud604 \uc900\ube44 \uc911</div><div style="font-size:13px;color:var(--mu);line-height:1.8;max-width:500px;margin:0 auto">\uad00\ubcf4 PDF \uc6d0\ubb38 \ucd94\ucd9c \uae30\uc220\uc744 \uac1c\ubc1c \uc911\uc774\uba70,<br>\ud604\uc7ac\ub294 \uad00\ubcf4 PDF\ub97c \uc9c1\uc811 \uc5f4\uc5b4 \uac1c\uc815 \ub0b4\uc6a9\uc744 \ud655\uc778\ud574\uc8fc\uc138\uc694.<br><br>\uadfc\uac70\ubc95\ub839: <b>'+esc(it.law||"\ubbf8\ud655\uc778")+'</b></div><div style="margin-top:20px"><a href="'+esc(it.pdf)+'" target="_blank" class="btn-sm btn-p" style="text-decoration:none;padding:10px 20px;font-size:13px">\ud83d\udcc4 \uad00\ubcf4 PDF \uc6d0\ubb38 \uc5f4\uae30</a></div></div>';
+  meta.textContent="\u2139\ufe0f \uad00\ubcf4 PDF \ucd94\ucd9c \uae30\ub2a5 \uac1c\ubc1c \uc911 \u2014 \ubc95\uc81c\ucc98 \uc785\ubc95\uc608\uace0 API(anc \ud0c0\uac9f) \ub4f1\ub85d \ud6c4 \uad6c\ud604 \uc608\uc815";
 }
 
 function renderGwReport(pd,it,hasPdf){
