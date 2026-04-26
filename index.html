@@ -98,7 +98,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--tx)}
 <div class="modal" id="deepModal"><div class="modal-box"><div class="modal-head"><h3 id="deepTitle">🔍 심층 분석</h3><button class="modal-close" onclick="closeDeep()">✕ 닫기</button></div><div class="modal-body"><div id="deepBody"></div><div id="deepMeta" style="font-size:11px;color:var(--mu);margin-top:12px;padding-top:10px;border-top:1px solid var(--bd)"></div></div></div></div>
 
 <script>
-var GAS="https://script.google.com/macros/s/AKfycbxBK950sgAgVctyQA6zdumwTbJ3axbrkJpxt2m0SydRg_p7v9z9_GFmP7hY1_99Oi5KFw/exec";
+var GAS="https://script.google.com/macros/s/AKfycby5Egouw4yiSxbyeNLLdp-YPpwvEQgIzTExz_sAqhFtmvKM3xjqMXQm7LfpB5t7bQLFag/exec";
 var staffData=[],kwData=[],lawItems=[],filteredItems=[],curPage=1,PAGE_SIZE=50,curReportLaw=null,curReportData=null;
 
 function jp(p,cb,ms){return new Promise(function(res,rej){var old=document.getElementById("__"+cb);if(old)old.remove();var t=setTimeout(function(){delete window[cb];rej(new Error("응답없음"));},ms);window[cb]=function(d){clearTimeout(t);delete window[cb];res(d);};var s=document.createElement("script");s.id="__"+cb;s.src=GAS+"?"+Object.keys(p).map(function(k){return k+"="+encodeURIComponent(p[k]);}).join("&");document.body.appendChild(s);});}
