@@ -89,7 +89,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--tx)}
 <div class="tbl-wrap"><table class="law-tbl"><thead><tr><th style="width:25%">법령명</th><th style="width:10%">종류/공포번호</th><th style="width:8%">구분</th><th style="width:9%">공포일</th><th style="width:9%">시행일</th><th style="width:39%">주요 개정 내용</th></tr></thead><tbody id="lawBody"><tr><td colspan="6" style="text-align:center;padding:30px;color:var(--mu)">법규 목록 로딩 중...</td></tr></tbody></table></div>
 <div class="paging" id="paging"></div></div>
 </div>
-<div id="panel3" style="display:none"><div class="card"><div class="lbl">담당자 관리</div><div class="sf"><input id="stName" placeholder="이름"><input id="stEmail" placeholder="이메일"><select id="stLaw" multiple style="height:120px"><option value="대기환경보전법">대기환경보전법</option><option value="물환경보전법">물환경보전법</option><option value="화학물질관리법">화학물질관리법</option><option value="화학물질의 등록 및 평가에 관한 법률">화학물질 등록·평가법</option><option value="산업안전보건법">산업안전보건법</option><option value="위험물안전관리법">위험물안전관리법</option><option value="소음·진동관리법">소음·진동관리법</option><option value="악취방지법">악취방지법</option><option value="토양환경보전법">토양환경보전법</option><option value="환경영향평가법">환경영향평가법</option><option value="폐기물관리법">폐기물관리법</option><option value="자원순환기본법">자원순환기본법</option><option value="온실가스 배출권의 할당 및 거래에 관한 법률">온실가스 배출권법</option><option value="탄소중립·녹색성장 기본법">탄소중립기본법</option><option value="환경오염시설의 통합관리에 관한 법률">환경오염시설 통합관리법</option><option value="고압가스 안전관리법">고압가스 안전관리법</option><option value="중대재해 처벌 등에 관한 법률">중대재해 처벌법</option><option value="하수도법">하수도법</option><option value="석면안전관리법">석면안전관리법</option><option value="잔류성유기오염물질 관리법">잔류성유기오염물질 관리법</option><option value="액화석유가스의 안전관리 및 사업법">액화석유가스법</option><option value="대기관리권역의 대기환경개선에 관한 특별법">대기관리권역 특별법</option><option value="대기오염공정시험기준">대기오염공정시험기준</option><option value="수질오염공정시험기준">수질오염공정시험기준</option><option value="폐기물공정시험기준">폐기물공정시험기준</option></select><div style="display:flex;gap:6px"><button class="btn-sm btn-p" onclick="addStaff()">+ 추가</button><button class="btn-sm btn-g" onclick="syncStaff()">💾 서버 저장</button></div></div><div id="staffList"></div><div class="msg ok" id="syncMsg"></div><p style="font-size:10px;color:var(--mu);margin-top:6px">※ 매일 08:00 신규 개정 감지 → 담당 법규 매칭 → 메일 발송</p></div></div>
+<div id="panel3" style="display:none"><div class="card"><div class="lbl">담당자 관리</div><div class="sf"><input id="stName" placeholder="이름"><input id="stEmail" placeholder="이메일"><select id="stLaw" multiple style="height:120px"></select><div style="display:flex;gap:6px"><button class="btn-sm btn-p" onclick="addStaff()">+ 추가</button><button class="btn-sm btn-g" onclick="syncStaff()">💾 서버 저장</button></div></div><div id="staffList"></div><div class="msg ok" id="syncMsg"></div><p style="font-size:10px;color:var(--mu);margin-top:6px">※ 매일 08:00 신규 개정 감지 → 담당 법규 매칭 → 메일 발송</p></div></div>
 </div></div>
 
 <div class="modal" id="reportModal"><div class="modal-box"><div class="modal-head"><h3 id="rptTitle">📋 AI 영향 검토 보고서</h3><button class="modal-close" onclick="closeModal()">✕ 닫기</button></div><div class="modal-body"><div id="rptBody"></div><div id="rptMeta" style="font-size:11px;color:var(--mu);margin-top:12px;padding-top:10px;border-top:1px solid var(--bd)"></div><div class="fb-area"><div style="font-size:12px;font-weight:900;margin-bottom:6px">💬 피드백 → 재분석</div><textarea id="fbText" placeholder="예: NF3 냉매 관련 온실가스법 연관 분석 추가해줘 / 별표8 배출기준 변경 상세 확인 필요"></textarea><div style="display:flex;gap:6px;margin-top:6px"><button class="btn-sm btn-p" onclick="submitFeedback()">🔄 피드백 반영 재분석</button><button class="btn-sm btn-o" onclick="deleteCache()">🗑️ 캐시 삭제 후 새로 분석</button></div></div></div></div></div>
@@ -122,6 +122,7 @@ var PARENT_BY_CAT={
   ],
   "2.2":[
     "대기환경보전법","악취방지법",
+    "수도권대기환경개선에 관한 특별법",
     "대기관리권역의 대기환경개선에 관한 특별법",
     "미세먼지 저감 및 관리에 관한 특별법",
     "오존층 보호를 위한 특정물질의 제조규제 등에 관한 법률"
@@ -130,6 +131,7 @@ var PARENT_BY_CAT={
   "2.4":[
     "화학물질관리법","화학물질의 등록 및 평가 등에 관한 법률",
     "생활화학제품 및 살생물제의 안전관리에 관한 법률",
+    "화학무기·생물무기의 금지와 특정화학물질·생물작용제 등의 제조·수출입 규제 등에 관한 법률",
     "마약류 관리에 관한 법률"
   ],
   "2.5":["토양환경보전법"],
@@ -140,7 +142,9 @@ var PARENT_BY_CAT={
   ],
   "2.7":[
     "기후위기 대응을 위한 탄소중립·녹색성장 기본법",
-    "온실가스 배출권의 할당 및 거래에 관한 법률"
+    "저탄소 녹색성장 기본법",
+    "온실가스 배출권의 할당 및 거래에 관한 법률",
+    "에너지이용 합리화법"
   ],
   "2.8":["소음·진동관리법"],
   "2.9":["잔류성유기오염물질 관리법"]
@@ -156,7 +160,35 @@ function updateParentSelect(catCode,selectId){
   for(var i=0;i<sel.options.length;i++){if(sel.options[i].value===prev){sel.value=prev;return;}}
 }
 
-document.addEventListener("DOMContentLoaded",function(){updateParentSelect("","fParent");updateParentSelect("","gwParent");});
+// 카테고리 한글 라벨
+var CAT_LABEL={
+  "1.1":"안전보건 > 산업안전보건","1.2":"안전보건 > 연구실안전",
+  "1.3":"안전보건 > 소방/비상대응","1.4":"안전보건 > 가스",
+  "1.5":"안전보건 > 원자력","1.6":"안전보건 > 생물안전",
+  "2.1":"환경 > 공통","2.2":"환경 > 대기","2.3":"환경 > 물",
+  "2.4":"환경 > 화학물질","2.5":"환경 > 토양","2.6":"환경 > 폐기물",
+  "2.7":"환경 > 에너지/기후","2.8":"환경 > 소음/진동",
+  "2.9":"환경 > 잔류성유기오염물질"
+};
+
+// 담당자 관리 stLaw: 52개 상위법을 카테고리 그룹핑으로 채움
+function fillStaffLawOptions(){
+  var sel=document.getElementById("stLaw");
+  if(!sel||!window.PARENT_BY_CAT) return;
+  var html="";
+  Object.keys(PARENT_BY_CAT).forEach(function(code){
+    var laws=PARENT_BY_CAT[code];
+    html+='<optgroup label="'+(CAT_LABEL[code]||code)+'">';
+    laws.forEach(function(l){
+      html+='<option value="'+l+'">'+l+'</option>';
+    });
+    html+='</optgroup>';
+  });
+  sel.innerHTML=html;
+}
+
+
+document.addEventListener("DOMContentLoaded",function(){updateParentSelect("","fParent");updateParentSelect("","gwParent");fillStaffLawOptions();});
 
 
 var GAS="https://script.google.com/macros/s/AKfycbwdu521EDoY8-F6V62cNvEouDw5-_Fgta8PV0hdBehoSl-t-y670xorVIiYmj41n9hC/exec";
