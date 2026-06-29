@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 법규비서 - 데이터 삭제 요청</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", sans-serif;
+  background: #FFFFFF;
+  color: #111111;
+  line-height: 1.7;
+  padding: 40px 20px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+.eyebrow {
+  font-size: 11px;
+  font-weight: bold;
+  color: #FA5400;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+h1 {
+  font-size: 32px;
+  letter-spacing: -0.04em;
+  margin-bottom: 8px;
+}
+.subtitle {
+  color: #757575;
+  font-size: 14px;
+  margin-bottom: 40px;
+  padding-bottom: 30px;
+  border-bottom: 1px solid #E5E5E5;
+}
+h2 {
+  font-size: 18px;
+  margin-top: 36px;
+  margin-bottom: 16px;
+  letter-spacing: -0.02em;
+}
+p {
+  margin-bottom: 14px;
+  color: #111111;
+  font-size: 14px;
+}
+ul, ol {
+  margin-bottom: 16px;
+  padding-left: 20px;
+}
+li {
+  margin-bottom: 10px;
+  color: #111111;
+  font-size: 14px;
+}
+.box {
+  background: #F5F5F5;
+  padding: 20px;
+  margin: 20px 0;
+  font-size: 13px;
+}
+.highlight {
+  background: #FA5400;
+  color: #FFFFFF;
+  padding: 24px;
+  margin: 30px 0;
+  font-size: 14px;
+  font-weight: bold;
+}
+.method {
+  border-left: 4px solid #FA5400;
+  padding-left: 20px;
+  margin: 20px 0;
+}
+.method-title {
+  font-size: 11px;
+  font-weight: bold;
+  color: #FA5400;
+  letter-spacing: 0.2em;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+.footer {
+  margin-top: 60px;
+  padding-top: 30px;
+  border-top: 1px solid #E5E5E5;
+  font-size: 12px;
+  color: #757575;
+}
+strong { color: #111111; }
+a { color: #FA5400; }
+</style>
+</head>
+<body>
+
+<div class="eyebrow">DATA DELETION</div>
+<h1>데이터 삭제 요청</h1>
+<div class="subtitle">AI 법규비서 (AI Law Secretary)<br>최종 수정일: 2026년 6월 29일</div>
+
+<p>AI 법규비서는 이용자의 개인정보 보호를 위해 데이터 삭제 권리를 보장합니다. 본 페이지는 이용자가 앱 내에서 수집된 데이터를 삭제하는 방법을 안내합니다.</p>
+
+<div class="highlight">
+  AI 법규비서는 익명으로 작동하며, 이름·이메일·전화번호 등 개인 식별 정보를 수집하지 않습니다.
+</div>
+
+<h2>1. 수집되는 데이터 종류</h2>
+<p>AI 법규비서가 수집하는 데이터는 다음과 같습니다:</p>
+<ul>
+  <li><strong>FCM 토큰</strong>: 푸시 알림 발송용 (익명 기기 식별자)</li>
+  <li><strong>알림 설정 정보</strong>: 사용자가 설정한 알림 받을 상위법, 키워드</li>
+  <li><strong>광고 ID</strong>: Google AdMob 광고 표시용</li>
+  <li><strong>앱 사용 통계</strong>: Firebase Analytics 익명 데이터</li>
+</ul>
+
+<h2>2. 가장 빠른 데이터 삭제 방법</h2>
+
+<div class="method">
+  <div class="method-title">METHOD 01 — RECOMMENDED</div>
+  <h2 style="margin-top: 0;">앱 삭제 (가장 빠름)</h2>
+  <p>박상필님 폰에서 AI 법규비서 앱을 삭제하면:</p>
+  <ul>
+    <li>FCM 토큰 즉시 무효화 → 다음 푸시 발송 시 자동으로 Firestore에서 삭제됨</li>
+    <li>광고 ID 더 이상 사용 안 됨</li>
+    <li>로컬 즐겨찾기 데이터 삭제</li>
+  </ul>
+  <p>대부분의 사용자는 이 방법으로 충분합니다.</p>
+</div>
+
+<div class="method">
+  <div class="method-title">METHOD 02</div>
+  <h2 style="margin-top: 0;">앱 내 알림 설정 해제</h2>
+  <p>앱을 계속 사용하면서 알림만 끄려면:</p>
+  <ol>
+    <li>AI 법규비서 앱 실행</li>
+    <li>하단 메뉴 <strong>설정</strong> 탭 선택</li>
+    <li><strong>02 - NOTIFICATIONS</strong> 섹션에서 푸시 알림 OFF</li>
+  </ol>
+  <p>알림 OFF 시 Firestore에서 해당 사용자 데이터가 더 이상 사용되지 않습니다.</p>
+</div>
+
+<div class="method">
+  <div class="method-title">METHOD 03</div>
+  <h2 style="margin-top: 0;">완전 데이터 삭제 요청</h2>
+  <p>Firestore에 저장된 데이터의 완전한 삭제를 원하시면 다음 이메일로 요청해주세요:</p>
+  <div class="box">
+    <p style="margin: 0;"><strong>요청 이메일 주소:</strong></p>
+    <p style="margin-top: 8px; font-size: 16px;"><strong style="color: #FA5400;">ailawsecretary.app@gmail.com</strong></p>
+  </div>
+  <p><strong>이메일 제목:</strong> [데이터 삭제 요청] AI 법규비서</p>
+  <p><strong>본문에 포함할 내용:</strong></p>
+  <ul>
+    <li>요청 사유 (선택사항)</li>
+    <li>FCM 토큰 (앱 → 설정에서 확인 가능, 모르면 빈 칸 OK)</li>
+  </ul>
+  <p>요청 접수 후 <strong>3 영업일 이내</strong>에 데이터가 완전히 삭제됩니다.</p>
+</div>
+
+<h2>3. 삭제되는 데이터 목록</h2>
+<ul>
+  <li>Firestore에 저장된 FCM 토큰</li>
+  <li>알림 설정 정보 (상위법, 키워드)</li>
+  <li>앱 사용 통계 (Firebase Analytics)</li>
+  <li>광고 ID 연계 정보</li>
+</ul>
+
+<h2>4. 삭제 후 처리</h2>
+<p>데이터 삭제 후:</p>
+<ul>
+  <li>이전에 등록된 FCM 토큰은 더 이상 푸시 알림을 받지 않습니다</li>
+  <li>알림 설정은 초기화되며 복구할 수 없습니다</li>
+  <li>앱을 다시 설치하면 새로운 익명 토큰으로 처음부터 시작됩니다</li>
+</ul>
+
+<h2>5. 보유 의무가 있는 데이터</h2>
+<p>다음의 경우 일부 데이터가 일정 기간 보관될 수 있습니다:</p>
+<ul>
+  <li>Google Firebase 시스템 로그: 최대 14개월 (Firebase 자체 정책)</li>
+  <li>Google AdMob 광고 노출 데이터: AdMob 정책에 따름</li>
+</ul>
+
+<h2>6. 문의처</h2>
+<div class="box">
+  <p style="margin: 0;"><strong>개발자:</strong> 박상필</p>
+  <p style="margin: 4px 0 0;"><strong>앱:</strong> AI 법규비서 (AI Law Secretary)</p>
+  <p style="margin: 4px 0 0;"><strong>패키지:</strong> com.ailawsecretary.app</p>
+  <p style="margin: 4px 0 0;"><strong>이메일:</strong> ailawsecretary.app@gmail.com</p>
+  <p style="margin: 12px 0 0;"><strong>개인정보처리방침:</strong></p>
+  <p style="margin: 4px 0 0;"><a href="https://browneyes7979-cell.github.io/HAZOP/privacy.html">https://browneyes7979-cell.github.io/HAZOP/privacy.html</a></p>
+</div>
+
+<div class="footer">
+  © 2026 AI 법규비서. All rights reserved.<br>
+  본 앱은 환경안전 담당자를 위한 개인 프로젝트입니다.
+</div>
+
+</body>
+</html>
