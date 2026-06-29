@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI 법규비서 - 개인정보처리방침</title>
+<title>AI 법규비서 - 데이터 삭제 요청</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
@@ -46,12 +46,12 @@ p {
   color: #111111;
   font-size: 14px;
 }
-ul {
+ul, ol {
   margin-bottom: 16px;
   padding-left: 20px;
 }
 li {
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   color: #111111;
   font-size: 14px;
 }
@@ -61,6 +61,27 @@ li {
   margin: 20px 0;
   font-size: 13px;
 }
+.highlight {
+  background: #FA5400;
+  color: #FFFFFF;
+  padding: 24px;
+  margin: 30px 0;
+  font-size: 14px;
+  font-weight: bold;
+}
+.method {
+  border-left: 4px solid #FA5400;
+  padding-left: 20px;
+  margin: 20px 0;
+}
+.method-title {
+  font-size: 11px;
+  font-weight: bold;
+  color: #FA5400;
+  letter-spacing: 0.2em;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
 .footer {
   margin-top: 60px;
   padding-top: 30px;
@@ -69,98 +90,105 @@ li {
   color: #757575;
 }
 strong { color: #111111; }
+a { color: #FA5400; }
 </style>
 </head>
 <body>
 
-<div class="eyebrow">PRIVACY POLICY</div>
-<h1>개인정보처리방침</h1>
+<div class="eyebrow">DATA DELETION</div>
+<h1>데이터 삭제 요청</h1>
 <div class="subtitle">AI 법규비서 (AI Law Secretary)<br>최종 수정일: 2026년 6월 29일</div>
 
-<p>박상필(이하 "개발자")은 AI 법규비서 앱(이하 "앱")의 이용자 개인정보를 다음과 같이 처리합니다. 본 방침은 이용자의 권리를 보호하고 관련 법령을 준수하기 위해 제정되었습니다.</p>
+<p>AI 법규비서는 이용자의 개인정보 보호를 위해 데이터 삭제 권리를 보장합니다. 본 페이지는 이용자가 앱 내에서 수집된 데이터를 삭제하는 방법을 안내합니다.</p>
 
-<h2>1. 수집하는 개인정보 항목</h2>
-<p>앱은 다음과 같은 정보를 수집할 수 있습니다:</p>
-<ul>
-  <li><strong>FCM 토큰</strong>: 푸시 알림 발송을 위한 기기 식별자</li>
-  <li><strong>광고 ID (Advertising ID)</strong>: Google AdMob 광고 표시를 위해</li>
-  <li><strong>사용자 알림 설정</strong>: 관심 법령 카테고리, 키워드 (사용자가 직접 입력한 정보)</li>
-  <li><strong>앱 사용 통계</strong>: Firebase Analytics를 통한 익명 통계 (다운로드 수, 화면 진입 등)</li>
-</ul>
-
-<div class="box">
-  <strong>수집하지 않는 정보:</strong> 이름, 이메일, 전화번호, 주소 등 개인 식별 정보. 앱은 익명으로 작동하며 회원가입을 요구하지 않습니다.
+<div class="highlight">
+  AI 법규비서는 익명으로 작동하며, 이름·이메일·전화번호 등 개인 식별 정보를 수집하지 않습니다.
 </div>
 
-<h2>2. 개인정보 수집 방법</h2>
+<h2>1. 수집되는 데이터 종류</h2>
+<p>AI 법규비서가 수집하는 데이터는 다음과 같습니다:</p>
 <ul>
-  <li>앱 설치 및 실행 시 자동 수집</li>
-  <li>사용자가 직접 설정 화면에서 입력</li>
+  <li><strong>FCM 토큰</strong>: 푸시 알림 발송용 (익명 기기 식별자)</li>
+  <li><strong>알림 설정 정보</strong>: 사용자가 설정한 알림 받을 상위법, 키워드</li>
+  <li><strong>광고 ID</strong>: Google AdMob 광고 표시용</li>
+  <li><strong>앱 사용 통계</strong>: Firebase Analytics 익명 데이터</li>
 </ul>
 
-<h2>3. 개인정보 이용 목적</h2>
-<ul>
-  <li>새 법령 알림 발송 (FCM 푸시)</li>
-  <li>사용자별 맞춤 알림 필터 적용</li>
-  <li>광고 표시 (AdMob)</li>
-  <li>앱 품질 개선을 위한 익명 통계 분석</li>
-</ul>
+<h2>2. 가장 빠른 데이터 삭제 방법</h2>
 
-<h2>4. 개인정보 보유 및 이용 기간</h2>
-<p>수집된 정보는 다음과 같이 보관됩니다:</p>
-<ul>
-  <li><strong>FCM 토큰 및 알림 설정</strong>: 앱 삭제 또는 알림 해제 시까지</li>
-  <li><strong>광고 ID</strong>: Google AdMob 정책에 따름</li>
-  <li><strong>익명 통계</strong>: Firebase Analytics 정책에 따름 (최대 14개월)</li>
-</ul>
-<p>이용자가 앱을 삭제하거나 알림 기능을 해제하면 관련 정보는 자동으로 삭제됩니다.</p>
-
-<h2>5. 개인정보 제3자 제공</h2>
-<p>개발자는 이용자의 정보를 외부에 판매하거나 공유하지 않습니다. 단, 다음 서비스 제공업체의 처리는 발생할 수 있습니다:</p>
-<ul>
-  <li><strong>Google Firebase</strong>: FCM 알림, Firestore 데이터 저장, Analytics</li>
-  <li><strong>Google AdMob</strong>: 광고 표시</li>
-  <li><strong>Google Apps Script</strong>: 법령 데이터 조회</li>
-</ul>
-
-<h2>6. 이용자의 권리</h2>
-<p>이용자는 다음 권리를 가집니다:</p>
-<ul>
-  <li>알림 수신 거부 (앱 설정 화면에서 ON/OFF)</li>
-  <li>광고 ID 초기화 (Android 시스템 설정)</li>
-  <li>앱 삭제를 통한 모든 데이터 제거</li>
-</ul>
-
-<h2>7. 광고 정책</h2>
-<p>본 앱은 Google AdMob 광고를 표시합니다. AdMob의 개인정보처리방침은 다음 링크를 참조하세요:</p>
-<p><a href="https://policies.google.com/privacy" target="_blank">https://policies.google.com/privacy</a></p>
-
-<h2>8. 어린이 개인정보 보호</h2>
-<p>본 앱은 만 13세 이상을 대상으로 합니다. 13세 미만 어린이의 개인정보를 의도적으로 수집하지 않습니다.</p>
-
-<h2>9. 보안 조치</h2>
-<p>개발자는 이용자의 개인정보를 보호하기 위해 다음과 같은 조치를 취합니다:</p>
-<ul>
-  <li>Google Firebase의 보안 규칙(Security Rules) 적용</li>
-  <li>HTTPS 암호화 통신</li>
-  <li>익명 토큰 기반 사용자 식별 (개인 식별 정보 비저장)</li>
-</ul>
-
-<h2>10. 면책 사항</h2>
-<div class="box">
-  본 앱이 제공하는 모든 법령 정보 및 AI 분석 결과는 <strong>참고용</strong>이며, 법적 효력을 갖지 않습니다. 중요한 법률적 의사결정은 반드시 법제처 공식 자료 또는 전문 법률가의 자문을 통해 이루어져야 합니다.
+<div class="method">
+  <div class="method-title">METHOD 01 — RECOMMENDED</div>
+  <h2 style="margin-top: 0;">앱 삭제 (가장 빠름)</h2>
+  <p>박상필님 폰에서 AI 법규비서 앱을 삭제하면:</p>
+  <ul>
+    <li>FCM 토큰 즉시 무효화 → 다음 푸시 발송 시 자동으로 Firestore에서 삭제됨</li>
+    <li>광고 ID 더 이상 사용 안 됨</li>
+    <li>로컬 즐겨찾기 데이터 삭제</li>
+  </ul>
+  <p>대부분의 사용자는 이 방법으로 충분합니다.</p>
 </div>
 
-<h2>11. 정책 변경</h2>
-<p>본 방침은 법령 또는 서비스 변경에 따라 수정될 수 있으며, 변경 시 본 페이지에 공지됩니다.</p>
+<div class="method">
+  <div class="method-title">METHOD 02</div>
+  <h2 style="margin-top: 0;">앱 내 알림 설정 해제</h2>
+  <p>앱을 계속 사용하면서 알림만 끄려면:</p>
+  <ol>
+    <li>AI 법규비서 앱 실행</li>
+    <li>하단 메뉴 <strong>설정</strong> 탭 선택</li>
+    <li><strong>02 - NOTIFICATIONS</strong> 섹션에서 푸시 알림 OFF</li>
+  </ol>
+  <p>알림 OFF 시 Firestore에서 해당 사용자 데이터가 더 이상 사용되지 않습니다.</p>
+</div>
 
-<h2>12. 문의처</h2>
-<p>개인정보 관련 문의:</p>
+<div class="method">
+  <div class="method-title">METHOD 03</div>
+  <h2 style="margin-top: 0;">완전 데이터 삭제 요청</h2>
+  <p>Firestore에 저장된 데이터의 완전한 삭제를 원하시면 다음 이메일로 요청해주세요:</p>
+  <div class="box">
+    <p style="margin: 0;"><strong>요청 이메일 주소:</strong></p>
+    <p style="margin-top: 8px; font-size: 16px;"><strong style="color: #FA5400;">ailawsecretary.app@gmail.com</strong></p>
+  </div>
+  <p><strong>이메일 제목:</strong> [데이터 삭제 요청] AI 법규비서</p>
+  <p><strong>본문에 포함할 내용:</strong></p>
+  <ul>
+    <li>요청 사유 (선택사항)</li>
+    <li>FCM 토큰 (앱 → 설정에서 확인 가능, 모르면 빈 칸 OK)</li>
+  </ul>
+  <p>요청 접수 후 <strong>3 영업일 이내</strong>에 데이터가 완전히 삭제됩니다.</p>
+</div>
+
+<h2>3. 삭제되는 데이터 목록</h2>
 <ul>
-  <li>개발자: 박상필</li>
-  <li>앱 이름: AI 법규비서 (AI Law Secretary)</li>
-  <li>패키지: com.ailawsecretary.app</li>
+  <li>Firestore에 저장된 FCM 토큰</li>
+  <li>알림 설정 정보 (상위법, 키워드)</li>
+  <li>앱 사용 통계 (Firebase Analytics)</li>
+  <li>광고 ID 연계 정보</li>
 </ul>
+
+<h2>4. 삭제 후 처리</h2>
+<p>데이터 삭제 후:</p>
+<ul>
+  <li>이전에 등록된 FCM 토큰은 더 이상 푸시 알림을 받지 않습니다</li>
+  <li>알림 설정은 초기화되며 복구할 수 없습니다</li>
+  <li>앱을 다시 설치하면 새로운 익명 토큰으로 처음부터 시작됩니다</li>
+</ul>
+
+<h2>5. 보유 의무가 있는 데이터</h2>
+<p>다음의 경우 일부 데이터가 일정 기간 보관될 수 있습니다:</p>
+<ul>
+  <li>Google Firebase 시스템 로그: 최대 14개월 (Firebase 자체 정책)</li>
+  <li>Google AdMob 광고 노출 데이터: AdMob 정책에 따름</li>
+</ul>
+
+<h2>6. 문의처</h2>
+<div class="box">
+  <p style="margin: 0;"><strong>개발자:</strong> 박상필</p>
+  <p style="margin: 4px 0 0;"><strong>앱:</strong> AI 법규비서 (AI Law Secretary)</p>
+  <p style="margin: 4px 0 0;"><strong>패키지:</strong> com.ailawsecretary.app</p>
+  <p style="margin: 4px 0 0;"><strong>이메일:</strong> browneyes7979@gmail.com</p>
+  <p style="margin: 12px 0 0;"><strong>개인정보처리방침:</strong></p>
+  <p style="margin: 4px 0 0;"><a href="https://browneyes7979-cell.github.io/HAZOP/privacy.html">https://browneyes7979-cell.github.io/HAZOP/privacy.html</a></p>
+</div>
 
 <div class="footer">
   © 2026 AI 법규비서. All rights reserved.<br>
