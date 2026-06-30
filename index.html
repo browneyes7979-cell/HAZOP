@@ -209,7 +209,26 @@ window.onload=function(){
 function renderStaff(){var h="";staffData.forEach(function(s,i){h+='<div style="display:flex;align-items:center;gap:8px;padding:8px;border-bottom:1px solid var(--bd);flex-wrap:wrap"><span style="font-size:12px;font-weight:700">'+esc(s.name)+'</span><span style="font-size:11px;color:var(--mu)">'+esc(s.email)+'</span><span style="font-size:10px;color:var(--p)">'+((s.laws||[]).length)+'개</span><button class="btn-sm" style="margin-left:auto;background:var(--red);color:#fff;padding:4px 10px;font-size:10px" onclick="delStaff('+i+')">삭제</button></div>';});document.getElementById("staffList").innerHTML=h;}
 function addStaff(){var n=document.getElementById("stName").value.trim(),e=document.getElementById("stEmail").value.trim();if(!n||!e){alert("이름/이메일 입력");return;}var sel=document.getElementById("stLaw"),laws=[];for(var i=0;i<sel.options.length;i++){if(sel.options[i].selected)laws.push(sel.options[i].value);}staffData.push({name:n,email:e,laws:laws});renderStaff();document.getElementById("stName").value="";document.getElementById("stEmail").value="";}
 function delStaff(i){staffData.splice(i,1);renderStaff();}
-async function syncStaff(){try{await jp({action:"saveStaff",data:JSON.stringify(staffData),callback:"__ss"},"__ss",10000);var m=document.getElementById("syncMsg");m.textContent="✅ 서버 저장 완료";m.style.display="block";setTimeout(function(){m.style.display="none";},3000);}catch(ex){alert("실패");}}
+
+async function syncStaff(){
+  try{
+    var res=await fetch(GAS,{
+      method:"POST",
+      body:new URLSearchParams({action:"saveStaff",data:JSON.stringify(staffData)})
+    });
+    var d=await res.json();
+    if(d.ok){
+      var m=document.getElementById("syncMsg");
+      m.textContent="✅ 서버 저장 완료";
+      m.style.display="block";
+      setTimeout(function(){m.style.display="none";},3000);
+    }else{
+      alert("실패: "+(d.error||"알 수 없는 오류"));
+    }
+  }catch(ex){
+    alert("실패: "+ex.message);
+  }
+}
 async function loadStaff(){try{var d=await jp({action:"getStaff",callback:"__gs"},"__gs",10000);if(d.staff&&d.staff.length){staffData=d.staff;renderStaff();}}catch(ex){}}
 
 // ── 키워드 ──
