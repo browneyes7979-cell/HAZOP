@@ -548,6 +548,116 @@ function renderGwReport(pd,it,hasPdf){
   return h;
 }
 
+  // ── 글 내보내기 ──
+function exportBlog(){
+  if(!curReportLaw||!curReportData){alert("먼저 보고서를 열어주세요");return;}
+  var it=curReportLaw, pd=curReportData.data||{};
+  var today=new Date(), ymd=today.toISOString().slice(0,10);
+  var slug=ymd+"-"+(it.nm||"law").replace(/[^가-힣a-zA-Z0-9]/g,"").slice(0,20);
+
+  var body="";
+  if(pd.핵심변경사항){
+    body+='<div class="callout"><strong>한 줄 요약</strong>\n'+esc(pd.핵심변경사항)+'\n</div>\n\n';
+  }
+  if(pd.개정사유){
+    body+='<h2>무엇이 왜 바뀌었나</h2>\n<p>\n'+esc(pd.개정사유)+'\n</p>\n\n';
+  }
+  var ch=pd.변경비교표||[];
+  if(ch.length){
+    body+='<h2>주요 개정 조문</h2>\n<table>\n  <thead>\n    <tr><th style="width:22%">조문</th><th style="width:39%">현행</th><th style="width:39%">개정</th></tr>\n  </thead>\n  <tbody>\n';
+    ch.forEach(function(c){
+      body+='    <tr><td>'+esc(c.조문||"")+'</td><td>'+esc(c.현행||"")+'</td><td>'+esc(c.개정||"")+'</td></tr>\n';
+    });
+    body+='  </tbody>\n</table>\n\n';
+  }
+  var tasks=pd.현업추진업무||[];
+  if(tasks.length){
+    body+='<h2>실무에서 확인할 것</h2>\n<ul>\n';
+    tasks.forEach(function(t){
+      body+='  <li>'+esc(t.업무||"")+(t.세부내용?" — "+esc(t.세부내용):"")+'</li>\n';
+    });
+    body+='</ul>\n\n';
+  }
+  if(pd.별표참고&&pd.별표참고!=="해당없음"){
+    body+='<h2>별표 참고</h2>\n<p>\n'+esc(pd.별표참고)+'\n</p>\n\n';
+  }
+  body+='<h2>참고</h2>\n<p>\n법령 원문은 <a href="https://www.law.go.kr/법령/'+encodeURIComponent(it.nm||"")+'" target="_blank" rel="noopener">국가법령정보센터</a>에서 확인하세요.\n</p>\n';
+
+  var y=(it.ed||"").slice(0,4), m=(it.ed||"").slice(4,6);
+  var seoTitle=(it.nm||"")+" "+y+"년 "+parseInt(m||"1")+"월 개정 정리";
+  var desc=(pd.핵심변경사항||"").slice(0,120);
+
+  var html='<!DOCTYPE html>\n<html lang="ko">\n<head>\n'+
+'<meta charset="UTF-8">\n'+
+'<meta name="viewport" content="width=device-width, initial-scale=1.0">\n'+
+'<title>'+esc(seoTitle)+'</title>\n'+
+'<meta name="description" content="'+esc(desc)+'">\n'+
+'<meta property="og:title" content="'+esc(seoTitle)+'">\n'+
+'<meta property="og:description" content="'+esc(desc)+'">\n'+
+'<meta property="og:type" content="article">\n'+
+'<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@600;700&display=swap" rel="stylesheet">\n'+
+'<style>\n'+
+':root{--ink:#12212e;--paper:#fbfaf7;--rule:#ded9d0;--muted:#6b6559;--mark:#b03a2e;--link:#1d4e78}\n'+
+'*{box-sizing:border-box;margin:0;padding:0}\n'+
+'body{font-family:\'Noto Sans KR\',sans-serif;background:var(--paper);color:var(--ink);line-height:1.85;-webkit-font-smoothing:antialiased}\n'+
+'.wrap{max-width:700px;margin:0 auto;padding:0 20px}\n'+
+'.back{display:inline-block;margin:28px 0 0;font-size:13px;color:var(--muted);text-decoration:none}\n'+
+'.back:hover{color:var(--link);text-decoration:underline}\n'+
+'.head{border-bottom:2px solid var(--ink);padding:20px 0 24px;margin-bottom:32px}\n'+
+'.eyebrow{font-size:11px;letter-spacing:.22em;font-weight:700;color:var(--mark);margin-bottom:12px}\n'+
+'h1{font-family:\'Noto Serif KR\',serif;font-weight:700;font-size:28px;line-height:1.4;letter-spacing:-.02em}\n'+
+'.meta{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin-top:16px;font-size:12px;color:var(--muted)}\n'+
+'.enforce{font-weight:700;color:#fff;background:var(--mark);border-radius:2px;padding:3px 10px;font-size:12px}\n'+
+'h2{font-family:\'Noto Serif KR\',serif;font-weight:600;font-size:20px;margin:38px 0 12px;letter-spacing:-.01em;padding-bottom:6px;border-bottom:1px solid var(--rule)}\n'+
+'p{margin-bottom:16px;font-size:15.5px}\n'+
+'ul,ol{margin:0 0 18px 20px}\n'+
+'li{margin-bottom:8px;font-size:15.5px}\n'+
+'a{color:var(--link)}\n'+
+'.callout{background:#fff;border-left:3px solid var(--mark);padding:14px 18px;margin:22px 0;font-size:14.5px}\n'+
+'.callout strong{display:block;margin-bottom:4px;color:var(--mark);font-size:13px;letter-spacing:.04em}\n'+
+'table{width:100%;border-collapse:collapse;margin:20px 0;font-size:14px;table-layout:fixed}\n'+
+'th{background:var(--ink);color:#fff;padding:9px 10px;font-weight:700;text-align:left;font-size:13px}\n'+
+'td{padding:10px;border-bottom:1px solid var(--rule);vertical-align:top;overflow-wrap:break-word}\n'+
+'tr:nth-child(even) td{background:#fff}\n'+
+'.appbox{background:#fff;border:1px solid var(--rule);border-radius:4px;padding:18px 20px;margin:44px 0 0}\n'+
+'.appbox strong{font-size:15px;display:block;margin-bottom:6px}\n'+
+'.appbox p{font-size:13px;color:var(--muted);margin-bottom:12px}\n'+
+'.appbox a{display:inline-block;background:var(--ink);color:#fff;padding:9px 18px;border-radius:3px;text-decoration:none;font-size:13px;font-weight:700}\n'+
+'footer{margin:28px 0 60px;padding-top:22px;border-top:1px solid var(--rule);font-size:13px;color:var(--muted)}\n'+
+'@media(max-width:600px){h1{font-size:23px}h2{font-size:18px}p,li{font-size:15px}.wrap{padding:0 16px}}\n'+
+'</style>\n</head>\n<body>\n<div class="wrap">\n\n'+
+'<a class="back" href="./">← 목록으로</a>\n\n'+
+'<div class="head">\n'+
+'  <div class="eyebrow">'+esc(it.tp||"법령 개정")+'</div>\n'+
+'  <h1>'+esc(seoTitle)+'</h1>\n'+
+'  <div class="meta">\n'+
+'    <span class="enforce">시행일 '+fmtFull(it.ed)+'</span>\n'+
+'    <span>공포 '+fmtFull(it.pd)+'</span>\n'+
+'    <span>소관 '+esc(it.dept||"")+'</span>\n'+
+'  </div>\n</div>\n\n'+
+body+'\n'+
+'<div class="appbox">\n'+
+'  <strong>법규 개정을 자동으로 받아보세요</strong>\n'+
+'  <p>담당 법규를 등록해 두면 개정될 때마다 영향 검토 내용을 정리해서 알려드립니다. AI 법규비서 · Android 무료.</p>\n'+
+'  <a href="https://play.google.com/store/apps/details?id=com.ailawsecretary.app" target="_blank" rel="noopener">앱 다운로드</a>\n'+
+'</div>\n\n'+
+'<footer>\n  이 글은 참고용 정리입니다. 실제 적용 시 법령 원문과 소관부처 유권해석을 확인하세요.\n</footer>\n\n'+
+'</div>\n</body>\n</html>';
+
+  var blob=new Blob([html],{type:"text/html;charset=utf-8"});
+  var a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download=slug+".html";
+  a.click();
+  alert("다운로드 완료\n\n파일명: "+slug+".html\n\n⚠️ GitHub에 올리기 전 법제처 원문으로 내용을 반드시 검증하세요.");
+}
+
+function fmtFull(d){
+  if(!d||d.length<8) return d||"";
+  var s=d.replace(/-/g,"");
+  return s.slice(0,4)+"."+s.slice(4,6)+"."+s.slice(6,8);
+}
+  
 function esc(t){return(t||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 function fmtDate(d){if(!d||d.length<8)return d||"";return d.slice(4,6)+"-"+d.slice(6,8);}
 </script>
