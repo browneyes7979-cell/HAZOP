@@ -595,8 +595,6 @@ function exportBlog(){
 '<meta property="og:title" content="'+esc(seoTitle)+'">\n'+
 '<meta property="og:description" content="'+esc(desc)+'">\n'+
 '<meta property="og:type" content="article">\n'+
-'<script async src="https://www.googletagmanager.com/gtag/js?id=G-HOLZ54Q62L"></script>\n'+
-'<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag("js",new Date());gtag("config","G-HOLZ54Q62L");</script>\n'+    
 '<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@600;700&display=swap" rel="stylesheet">\n'+
 '<style>\n'+
 ':root{--ink:#12212e;--paper:#fbfaf7;--rule:#ded9d0;--muted:#6b6559;--mark:#b03a2e;--link:#1d4e78}\n'+
@@ -638,6 +636,7 @@ function exportBlog(){
 '    <span>소관 '+esc(it.dept||"")+'</span>\n'+
 '  </div>\n</div>\n\n'+
 body+'\n'+
+'<div class="appbox">\n'+
 '<footer>\n  이 글은 참고용 정리입니다. 실제 적용 시 법령 원문과 소관부처 유권해석을 확인하세요.\n</footer>\n\n'+
 '</div>\n</body>\n</html>';
 
